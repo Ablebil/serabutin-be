@@ -1,0 +1,1375 @@
+openapi: 3.1.0
+info:
+  title: Serabutin API
+  description: API documentation for Serabutin - Hyperlocal informal worker marketplace
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Berhasil.
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Terjadi kesalahan.
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Data yang dikirim tidak valid.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - Email harus diisi.
+            password:
+              - Password minimal 8 karakter.
+
+    UserObject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        full_name:
+          type: string
+          example: John Doe
+        role:
+          type: string
+          enum: [ client, worker ]
+          example: worker
+        is_verified:
+          type: boolean
+          example: false
+        is_active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-04-25T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-04-25T10:00:00Z
+
+    UserProfileObject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        user_id:
+          type: string
+          format: uuid
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        bio:
+          type: [ string, "null" ]
+          example: Tukang bersih-bersih profesional berpengalaman 5 tahun.
+        location_district:
+          type: [ string, "null" ]
+          example: Lowokwaru
+        location_city:
+          type: [ string, "null" ]
+          example: Kota Malang
+        avatar_url:
+          type: [ string, "null" ]
+          example: https://storage.serabutin.com/avatars/default.png
+        phone:
+          type: [ string, "null" ]
+          description: Worker only. Null if the requester has no accepted bid with this
+            worker.
+          example: "081234567890"
+        avg_rating:
+          type: number
+          format: float
+          example: 4.8
+        total_jobs_posted:
+          type: integer
+          description: Client only. Always 0 for worker.
+          example: 12
+        total_jobs_completed:
+          type: integer
+          description: Worker only. Always 0 for client.
+          example: 35
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-04-25T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-04-25T10:00:00Z
+
+    CategoryObject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        name:
+          type: string
+          example: Bebersih
+        slug:
+          type: string
+          example: bebersih
+        is_active:
+          type: boolean
+          example: true
+
+    JobObject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        client_id:
+          type: string
+          format: uuid
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        category:
+          $ref: "#/components/schemas/CategoryObject"
+        title:
+          type: string
+          example: Butuh tukang bebersih rumah
+        description:
+          type: string
+          example: Rumah 2 lantai, perlu dibersihkan bagian dalam dan luar.
+        budget_min:
+          type: number
+          format: float
+          example: 80000
+        budget_max:
+          type: number
+          format: float
+          example: 150000
+        workers_needed:
+          type: integer
+          example: 2
+        location_district:
+          type: string
+          example: Lowokwaru
+        location_city:
+          type: string
+          example: Kota Malang
+        status:
+          type: string
+          enum: [ open, in_progress, completed, cancelled ]
+          example: open
+        start_at:
+          type: string
+          format: date-time
+          example: 2025-05-01T08:00:00Z
+        deadline_at:
+          type: string
+          format: date-time
+          example: 2025-05-01T17:00:00Z
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-04-25T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-04-25T10:00:00Z
+
+  responses:
+    BadRequest:
+      description: Failed to parse request body
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status: error
+            message: Format request tidak valid.
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status: error
+            message: Terjadi kesalahan pada server. Coba lagi nanti.
+
+paths:
+  # auth module
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      description: Register a new user as client or worker. A verification email will
+        be sent after successful registration.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - full_name
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  minLength: 8
+                  example: secret123
+                full_name:
+                  type: string
+                  example: John Doe
+                role:
+                  type: string
+                  enum: [ client, worker ]
+                  example: worker
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Registrasi berhasil. Silakan cek email untuk verifikasi akun.
+                  data:
+                    $ref: "#/components/schemas/UserObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Email sudah terdaftar.
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/verify:
+    get:
+      tags:
+        - Auth
+      summary: Verify email address
+      description: Called by the frontend after the user clicks the verification link
+        in their email. The token is extracted from the URL query param and sent
+        to this endpoint.
+      parameters:
+        - in: query
+          name: token
+          required: true
+          schema:
+            type: string
+          description: Email verification token
+          example: a1b2c3d4e5f6...
+      responses:
+        "200":
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Email berhasil diverifikasi. Silakan login.
+        "400":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Token verifikasi tidak valid atau sudah kedaluwarsa.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login
+      description: Authenticate a user. Access token is returned in the response body,
+        refresh token is set as an HttpOnly cookie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  example: secret123
+      responses:
+        "200":
+          description: Login successful
+          headers:
+            Set-Cookie:
+              description: HttpOnly cookie containing the refresh token
+              schema:
+                type: string
+                example: refresh_token=abc123...; HttpOnly; Secure; SameSite=Strict;
+                  Path=/api/v1/auth/refresh; Max-Age=86400
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Login berhasil.
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      token_type:
+                        type: string
+                        example: Bearer
+                      expires_in:
+                        type: integer
+                        description: Access token expiry in seconds
+                        example: 900
+                      user:
+                        $ref: "#/components/schemas/UserObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Email atau password salah.
+        "403":
+          description: Email not verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Silakan verifikasi email terlebih dahulu.
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      description: Rotate the refresh token and issue a new access token. The refresh
+        token is read automatically from the HttpOnly cookie.
+      parameters:
+        - in: cookie
+          name: refresh_token
+          required: true
+          schema:
+            type: string
+          description: Refresh token stored in HttpOnly cookie
+      responses:
+        "200":
+          description: Token refreshed successfully
+          headers:
+            Set-Cookie:
+              description: HttpOnly cookie containing the new refresh token
+              schema:
+                type: string
+                example: refresh_token=xyz789...; HttpOnly; Secure; SameSite=Strict;
+                  Path=/api/v1/auth/refresh; Max-Age=86400
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Token berhasil diperbarui.
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      token_type:
+                        type: string
+                        example: Bearer
+                      expires_in:
+                        type: integer
+                        example: 900
+        "401":
+          description: Refresh token missing, invalid, or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Refresh token tidak valid atau sudah kedaluwarsa.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout
+      description: Invalidate the current refresh token and clear the HttpOnly cookie.
+        Requires a valid access token.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: cookie
+          name: refresh_token
+          required: true
+          schema:
+            type: string
+          description: Refresh token stored in HttpOnly cookie
+      responses:
+        "200":
+          description: Logout successful
+          headers:
+            Set-Cookie:
+              description: Clears the refresh token cookie
+              schema:
+                type: string
+                example: refresh_token=; HttpOnly; Secure; SameSite=Strict;
+                  Path=/api/v1/auth/refresh; Max-Age=0
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Logout berhasil.
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # users module
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get authenticated user profile
+      description: Returns the profile of the currently authenticated user, including
+        their user_profiles data.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Profil berhasil diambil.
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: "#/components/schemas/UserObject"
+                      profile:
+                        $ref: "#/components/schemas/UserProfileObject"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    patch:
+      tags:
+        - Users
+      summary: Update authenticated user profile
+      description: Update profile of the currently authenticated user. All fields are
+        optional. Phone field is only applicable for workers.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                  example: John Doe
+                bio:
+                  type: string
+                  example: Tukang bersih-bersih profesional berpengalaman 5 tahun.
+                location_district:
+                  type: string
+                  example: Lowokwaru
+                location_city:
+                  type: string
+                  enum: [ Kota Malang, Kota Batu, Kabupaten Malang ]
+                  example: Kota Malang
+                avatar_url:
+                  type: string
+                  example: https://storage.serabutin.com/avatars/01932b2a.png
+                phone:
+                  type: string
+                  description: Worker only. Ignored if requester is a client.
+                  example: "081234567890"
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Profil berhasil diperbarui.
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: "#/components/schemas/UserObject"
+                      profile:
+                        $ref: "#/components/schemas/UserProfileObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/me/jobs:
+    get:
+      tags:
+        - Users
+      summary: Get authenticated client's posted jobs
+      description: Returns a paginated list of jobs posted by the currently
+        authenticated client. Supports filtering by category and status.
+        Accessible by clients only.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number.
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of jobs per page.
+          example: 10
+        - in: query
+          name: category_slug
+          schema:
+            type: string
+          description: Filter by category slug.
+          example: bebersih
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [ open, in_progress, completed, cancelled ]
+          description: Filter by job status.
+          example: open
+      responses:
+        "200":
+          description: Posted jobs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Daftar pekerjaan berhasil diambil.
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JobObject"
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      per_page:
+                        type: integer
+                        example: 10
+                      total:
+                        type: integer
+                        example: 25
+                      last_page:
+                        type: integer
+                        example: 3
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "403":
+          description: Forbidden. Accessible by clients only.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Akses ditolak.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user profile by ID
+      description: Returns the public profile of a user by their ID. Phone number is
+        only visible if the requester has an accepted bid with this worker.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+      responses:
+        "200":
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Profil berhasil diambil.
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: "#/components/schemas/UserObject"
+                      profile:
+                        $ref: "#/components/schemas/UserProfileObject"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Pengguna tidak ditemukan.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # categories module
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: List all active categories
+      description: Returns all active job categories. No authentication required.
+      responses:
+        "200":
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Kategori berhasil diambil.
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CategoryObject"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  # jobs module
+  /jobs:
+    get:
+      tags:
+        - Jobs
+      summary: List jobs feed
+      description: Returns a paginated list of jobs using cursor-based pagination.
+        Supports filtering by category, city, date posted range, and budget
+        range. Accessible by workers only.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+          description: Cursor for pagination. Leave empty for the first page.
+          example: eyJpZCI6IjAxOTMyYjJhIn0=
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of jobs per page.
+          example: 10
+        - in: query
+          name: category_slug
+          schema:
+            type: string
+          description: Filter by category slug.
+          example: bebersih
+        - in: query
+          name: city
+          schema:
+            type: string
+            enum: [ Kota Malang, Kota Batu, Kabupaten Malang ]
+          description: Filter by city.
+          example: Kota Malang
+        - in: query
+          name: budget_min
+          schema:
+            type: number
+          description: Filter jobs with budget_max >= this value.
+          example: 50000
+        - in: query
+          name: budget_max
+          schema:
+            type: number
+          description: Filter jobs with budget_min <= this value.
+          example: 200000
+        - in: query
+          name: date_from
+          schema:
+            type: string
+            format: date
+          description: Filter jobs posted on or after this date.
+          example: 2025-04-01
+        - in: query
+          name: date_to
+          schema:
+            type: string
+            format: date
+          description: Filter jobs posted on or before this date.
+          example: 2025-04-30
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Full-text search on job title.
+          example: tukang bebersih
+      responses:
+        "200":
+          description: Jobs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Daftar pekerjaan berhasil diambil.
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JobObject"
+                  meta:
+                    type: object
+                    properties:
+                      next_cursor:
+                        type: [ string, "null" ]
+                        example: eyJpZCI6IjAxOTMyYjJhIn0=
+                      per_page:
+                        type: integer
+                        example: 10
+                      has_more:
+                        type: boolean
+                        example: true
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      tags:
+        - Jobs
+      summary: Create a new job
+      description: Post a new job. Accessible by clients only.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - category_id
+                - title
+                - description
+                - budget_min
+                - budget_max
+                - workers_needed
+                - location_district
+                - location_city
+                - start_at
+                - deadline_at
+              properties:
+                category_id:
+                  type: string
+                  format: uuid
+                  example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                title:
+                  type: string
+                  example: Butuh tukang bebersih rumah
+                description:
+                  type: string
+                  example: Rumah 2 lantai, perlu dibersihkan bagian dalam dan luar.
+                budget_min:
+                  type: number
+                  example: 80000
+                budget_max:
+                  type: number
+                  example: 150000
+                workers_needed:
+                  type: integer
+                  example: 2
+                location_district:
+                  type: string
+                  example: Lowokwaru
+                location_city:
+                  type: string
+                  enum: [ Kota Malang, Kota Batu, Kabupaten Malang ]
+                  example: Kota Malang
+                start_at:
+                  type: string
+                  format: date-time
+                  example: 2025-05-01T08:00:00Z
+                deadline_at:
+                  type: string
+                  format: date-time
+                  example: 2025-05-01T17:00:00Z
+      responses:
+        "201":
+          description: Job created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Pekerjaan berhasil diposting.
+                  data:
+                    $ref: "#/components/schemas/JobObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "403":
+          description: Forbidden. Worker is not allowed to post a job.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Akses ditolak.
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /jobs/{id}:
+    get:
+      tags:
+        - Jobs
+      summary: Get job detail
+      description: Returns the detail of a job by its ID.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Job ID
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+      responses:
+        "200":
+          description: Job retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Detail pekerjaan berhasil diambil.
+                  data:
+                    $ref: "#/components/schemas/JobObject"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Pekerjaan tidak ditemukan.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    patch:
+      tags:
+        - Jobs
+      summary: Update a job
+      description: Update a job. Only accessible by the client who posted the job, and
+        only when the job status is still open.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Job ID
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category_id:
+                  type: string
+                  format: uuid
+                  example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                title:
+                  type: string
+                  example: Butuh tukang bebersih rumah
+                description:
+                  type: string
+                  example: Rumah 2 lantai, perlu dibersihkan bagian dalam dan luar.
+                budget_min:
+                  type: number
+                  example: 80000
+                budget_max:
+                  type: number
+                  example: 150000
+                workers_needed:
+                  type: integer
+                  example: 2
+                location_district:
+                  type: string
+                  example: Lowokwaru
+                location_city:
+                  type: string
+                  enum: [ Kota Malang, Kota Batu, Kabupaten Malang ]
+                  example: Kota Malang
+                start_at:
+                  type: string
+                  format: date-time
+                  example: 2025-05-01T08:00:00Z
+                deadline_at:
+                  type: string
+                  format: date-time
+                  example: 2025-05-01T17:00:00Z
+      responses:
+        "200":
+          description: Job updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Pekerjaan berhasil diperbarui.
+                  data:
+                    $ref: "#/components/schemas/JobObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "403":
+          description: Forbidden. Not the job owner, or job is no longer open.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Akses ditolak.
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Pekerjaan tidak ditemukan.
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Jobs
+      summary: Delete a job
+      description: Delete a job. Only accessible by the client who posted the job, and
+        only when the job status is still open.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Job ID
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+      responses:
+        "200":
+          description: Job deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Pekerjaan berhasil dihapus.
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "403":
+          description: Forbidden. Not the job owner, or job is no longer open.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Akses ditolak.
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Pekerjaan tidak ditemukan.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /jobs/{id}/status:
+    patch:
+      tags:
+        - Jobs
+      summary: Update job status
+      description: Update job status to completed or cancelled. Only accessible by the
+        client who posted the job, and only when the job status is in_progress.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Job ID
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [ completed, cancelled ]
+                  example: completed
+      responses:
+        "200":
+          description: Job status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Status pekerjaan berhasil diperbarui.
+                  data:
+                    $ref: "#/components/schemas/JobObject"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "403":
+          description: Forbidden. Not the job owner, or job is not in_progress.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Akses ditolak.
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Pekerjaan tidak ditemukan.
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
