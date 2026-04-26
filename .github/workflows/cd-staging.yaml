@@ -5,17 +5,24 @@ on:
     branches:
       - staging
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   build-and-push:
     name: Build & Push Image
     runs-on: ubuntu-latest
 
     outputs:
-      image_tag: ${{ steps.meta.outputs.version }}
+      image_tag: ${{ steps.tag.outputs.image_tag }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: tag
+        run: echo "image_tag=staging-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -32,13 +39,13 @@ jobs:
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/serabutin-be
           tags: |
-            type=sha,prefix=staging-,format=short
+            type=raw,value=${{ steps.tag.outputs.image_tag }}
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          dockerfile: Dockerfile
+          file: Dockerfile
           target: production
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -73,12 +80,15 @@ jobs:
           key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT }}
           script: |
+            set -e
             cd ~/serabutin-be
 
-            export DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/serabutin-be
-            export DOCKER_TAG=staging-${{ github.sha }}
+            test -f .env || { echo ".env not found in ~/serabutin-be"; exit 1; }
 
-            docker compose -f docker-compose.prod.yaml pull app
+            export DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/serabutin-be
+            export DOCKER_TAG=${{ needs.build-and-push.outputs.image_tag }}
+
+            docker compose -f docker-compose.prod.yaml pull
             docker compose -f docker-compose.prod.yaml up -d --remove-orphans
 
             docker image prune -f
