@@ -16,18 +16,6 @@ components:
       bearerFormat: JWT
 
   schemas:
-    SuccessResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          example: success
-        message:
-          type: string
-          example: Berhasil.
-        data:
-          type: object
-
     ErrorResponse:
       type: object
       properties:
@@ -59,6 +47,35 @@ components:
             password:
               - Password minimal 8 karakter.
 
+    PaginatedMeta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 10
+        total:
+          type: integer
+          example: 25
+        last_page:
+          type: integer
+          example: 3
+
+    CursorMeta:
+      type: object
+      properties:
+        next_cursor:
+          type: [ string, "null" ]
+          example: eyJpZCI6IjAxOTMyYjJhIn0=
+        per_page:
+          type: integer
+          example: 10
+        has_more:
+          type: boolean
+          example: true
+
     UserObject:
       type: object
       properties:
@@ -83,6 +100,29 @@ components:
         is_active:
           type: boolean
           example: true
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-04-25T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-04-25T10:00:00Z
+
+    PublicUserObject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        full_name:
+          type: string
+          example: John Doe
+        role:
+          type: string
+          enum: [ client, worker ]
+          example: worker
         created_at:
           type: string
           format: date-time
@@ -157,6 +197,14 @@ components:
         is_active:
           type: boolean
           example: true
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-04-25T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-04-25T10:00:00Z
 
     JobObject:
       type: object
@@ -165,10 +213,8 @@ components:
           type: string
           format: uuid
           example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
-        client_id:
-          type: string
-          format: uuid
-          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        client:
+          $ref: "#/components/schemas/PublicUserObject"
         category:
           $ref: "#/components/schemas/CategoryObject"
         title:
@@ -222,12 +268,8 @@ components:
           type: string
           format: uuid
           example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
-        job_id:
-          type: string
-          format: uuid
-          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
         worker:
-          $ref: "#/components/schemas/UserObject"
+          $ref: "#/components/schemas/PublicUserObject"
         proposed_price:
           type: number
           format: float
@@ -264,9 +306,9 @@ components:
           format: uuid
           example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
         reviewer:
-          $ref: "#/components/schemas/UserObject"
+          $ref: "#/components/schemas/PublicUserObject"
         reviewee:
-          $ref: "#/components/schemas/UserObject"
+          $ref: "#/components/schemas/PublicUserObject"
         rating:
           type: integer
           minimum: 1
@@ -818,20 +860,7 @@ paths:
                     items:
                       $ref: "#/components/schemas/JobObject"
                   meta:
-                    type: object
-                    properties:
-                      current_page:
-                        type: integer
-                        example: 1
-                      per_page:
-                        type: integer
-                        example: 10
-                      total:
-                        type: integer
-                        example: 25
-                      last_page:
-                        type: integer
-                        example: 3
+                    $ref: "#/components/schemas/PaginatedMeta"
         "401":
           description: Unauthenticated
           content:
@@ -909,20 +938,7 @@ paths:
                         job:
                           $ref: "#/components/schemas/JobObject"
                   meta:
-                    type: object
-                    properties:
-                      current_page:
-                        type: integer
-                        example: 1
-                      per_page:
-                        type: integer
-                        example: 10
-                      total:
-                        type: integer
-                        example: 25
-                      last_page:
-                        type: integer
-                        example: 3
+                    $ref: "#/components/schemas/PaginatedMeta"
         "401":
           description: Unauthenticated
           content:
@@ -980,7 +996,7 @@ paths:
                     type: object
                     properties:
                       user:
-                        $ref: "#/components/schemas/UserObject"
+                        $ref: "#/components/schemas/PublicUserObject"
                       profile:
                         $ref: "#/components/schemas/UserProfileObject"
         "401":
@@ -1038,9 +1054,9 @@ paths:
       tags:
         - Jobs
       summary: List jobs feed
-      description: Returns a paginated list of jobs using cursor-based pagination.
-        Supports filtering by category, city, date posted range, and budget
-        range. Accessible by workers only.
+      description: Returns a paginated list of open jobs using cursor-based
+        pagination. Only jobs with status open are returned. Supports filtering
+        by category, city, date posted range, and budget range.
       security:
         - BearerAuth: []
       parameters:
@@ -1121,17 +1137,7 @@ paths:
                     items:
                       $ref: "#/components/schemas/JobObject"
                   meta:
-                    type: object
-                    properties:
-                      next_cursor:
-                        type: [ string, "null" ]
-                        example: eyJpZCI6IjAxOTMyYjJhIn0=
-                      per_page:
-                        type: integer
-                        example: 10
-                      has_more:
-                        type: boolean
-                        example: true
+                    $ref: "#/components/schemas/CursorMeta"
         "401":
           description: Unauthenticated
           content:
@@ -1187,6 +1193,7 @@ paths:
                   example: 150000
                 workers_needed:
                   type: integer
+                  minimum: 1
                   example: 2
                 location_district:
                   type: string
@@ -1306,8 +1313,9 @@ paths:
       tags:
         - Jobs
       summary: Update a job
-      description: Update a job. Only accessible by the client who posted the job, and
-        only when the job status is still open.
+      description: Update a job. Only accessible by the client who posted the job,
+        only when the job status is still open, and only when any bids have not
+        been accepted yet.
       security:
         - BearerAuth: []
       parameters:
@@ -1344,6 +1352,7 @@ paths:
                   example: 150000
                 workers_needed:
                   type: integer
+                  minimum: 1
                   example: 2
                 location_district:
                   type: string
@@ -1567,7 +1576,8 @@ paths:
         - Bids
       summary: List bids for a job
       description: Returns all bids for a specific job. Accessible by the client who
-        posted the job only.
+        posted the job only. Workers can check their own bid status via GET
+        /users/me/bids.
       security:
         - BearerAuth: []
       parameters:
@@ -1663,9 +1673,11 @@ paths:
               properties:
                 proposed_price:
                   type: number
+                  minimum: 1
                   example: 90000
                 estimated_duration_hours:
                   type: integer
+                  minimum: 1
                   example: 3
                 message:
                   type: string
@@ -1955,20 +1967,7 @@ paths:
                     items:
                       $ref: "#/components/schemas/JobObject"
                   meta:
-                    type: object
-                    properties:
-                      current_page:
-                        type: integer
-                        example: 1
-                      per_page:
-                        type: integer
-                        example: 10
-                      total:
-                        type: integer
-                        example: 25
-                      last_page:
-                        type: integer
-                        example: 3
+                    $ref: "#/components/schemas/PaginatedMeta"
         "401":
           description: Unauthenticated
           content:
@@ -2017,8 +2016,15 @@ paths:
             schema:
               type: object
               required:
+                - assignment_id
                 - rating
               properties:
+                assignment_id:
+                  type: string
+                  format: uuid
+                  description: The assignment ID to review. Required to identify which worker is
+                    being reviewed when workers_needed > 1.
+                  example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
                 rating:
                   type: integer
                   minimum: 1
@@ -2064,14 +2070,15 @@ paths:
                 status: error
                 message: Akses ditolak.
         "404":
-          description: Job not found
+          description: Job or assignment not found, or assignment does not belong to this
+            job
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 status: error
-                message: Pekerjaan tidak ditemukan.
+                message: Pekerjaan atau assignment tidak ditemukan.
         "409":
           description: Review already submitted
           content:
@@ -2087,62 +2094,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationErrorResponse"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-    get:
-      tags:
-        - Reviews
-      summary: List reviews for a job
-      description: Returns all reviews for a specific job. Accessible by anyone who is
-        authenticated.
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Job ID
-          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
-      responses:
-        "200":
-          description: Reviews retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  message:
-                    type: string
-                    example: Daftar review berhasil diambil.
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/ReviewObject"
-        "401":
-          description: Unauthenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status: error
-                message: Tidak terautentikasi.
-        "404":
-          description: Job not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status: error
-                message: Pekerjaan tidak ditemukan.
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -2197,20 +2148,7 @@ paths:
                     items:
                       $ref: "#/components/schemas/ReviewObject"
                   meta:
-                    type: object
-                    properties:
-                      current_page:
-                        type: integer
-                        example: 1
-                      per_page:
-                        type: integer
-                        example: 10
-                      total:
-                        type: integer
-                        example: 25
-                      last_page:
-                        type: integer
-                        example: 3
+                    $ref: "#/components/schemas/PaginatedMeta"
         "401":
           description: Unauthenticated
           content:
@@ -2361,25 +2299,15 @@ paths:
                     items:
                       $ref: "#/components/schemas/NotificationObject"
                   meta:
-                    type: object
-                    properties:
-                      current_page:
-                        type: integer
-                        example: 1
-                      per_page:
-                        type: integer
-                        example: 10
-                      total:
-                        type: integer
-                        example: 25
-                      last_page:
-                        type: integer
-                        example: 3
-                      unread_count:
-                        type: integer
-                        description: Total number of unread notifications. Useful for notification
-                          badge.
-                        example: 5
+                    allOf:
+                      - $ref: "#/components/schemas/PaginatedMeta"
+                      - type: object
+                        properties:
+                          unread_count:
+                            type: integer
+                            description: Total number of unread notifications. Useful for notification
+                              badge.
+                            example: 5
         "401":
           description: Unauthenticated
           content:
