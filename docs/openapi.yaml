@@ -7,6 +7,10 @@ info:
 servers:
   - url: http://localhost:8000/api/v1
     description: Local development server
+  - url: https://abilverse.bccdev.id/api/v1
+    description: Staging server
+  - url: https://serabutin.bccdev.id/api/v1
+    description: Production server
 
 components:
   securitySchemes:
