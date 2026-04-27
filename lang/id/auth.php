@@ -8,7 +8,7 @@ return [
     'mail' => [
         'verify_subject' => 'Verifikasi Email Akun Serabutin',
         'verify_greeting' => 'Halo, :name',
-        'verify_intro' => 'Terima kasih sudah mendaftar di Serabutin.',
+        'verify_intro' => 'Terima kasih sudah mendaftar di ',
         'verify_action' => 'Klik tautan berikut untuk verifikasi email akun kamu:',
         'verify_button' => 'Verifikasi Email',
         'verify_outro' => 'Jika kamu tidak merasa membuat akun, abaikan email ini.',
