@@ -9,6 +9,12 @@ return [
         'success' => 'Email berhasil diverifikasi. Silakan login.',
         'invalid_or_expired' => 'Token verifikasi tidak valid atau sudah kedaluwarsa.',
     ],
+    'login' => [
+        'success' => 'Login berhasil.',
+        'invalid_credentials' => 'Email atau password salah.',
+        'email_not_verified' => 'Silakan verifikasi email terlebih dahulu.',
+        'account_inactive' => 'Akun tidak aktif.',
+    ],
     'mail' => [
         'verify_subject' => 'Verifikasi Email Akun Serabutin',
         'verify_greeting' => 'Halo, :name',

@@ -3,13 +3,18 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\RegisterRequest;
 use App\Http\Requests\Api\V1\Auth\VerifyEmailRequest;
 use App\Mail\VerifyEmailMail;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Services\Auth\EmailVerificationTokenService;
+use App\Services\Auth\JwtService;
+use App\Services\Auth\RefreshTokenCookieFactory;
+use App\Services\Auth\RefreshTokenService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -73,5 +78,43 @@ class AuthController extends Controller
         }
 
         return $this->success(__('auth.verify.success'));
+    }
+
+    public function login(
+        LoginRequest $request,
+        JwtService $jwtService,
+        RefreshTokenService $refreshTokenService,
+        RefreshTokenCookieFactory $cookieFactory,
+    ): JsonResponse {
+        $payload = $request->validated();
+
+        $user = User::query()
+            ->where('email', $payload['email'])
+            ->first();
+
+        if (is_null($user) || !Hash::check($payload['password'], $user->password_hash)) {
+            return $this->error(__('auth.login.invalid_credentials'), 401);
+        }
+
+        if (!$user->is_verified) {
+            return $this->error(__('auth.login.email_not_verified'), 403);
+        }
+
+        if (!$user->is_active) {
+            return $this->error(__('auth.login.account_inactive'), 403);
+        }
+
+        $accessToken = $jwtService->issueAccessToken($user);
+        $refreshToken = $refreshTokenService->issue($user);
+
+        $data = [
+            'access_token' => $accessToken['access_token'],
+            'token_type' => $accessToken['token_type'],
+            'expires_in' => $accessToken['expires_in'],
+            'user' => $user->fresh(),
+        ];
+
+        return $this->success(__('auth.login.success'), $data)
+            ->cookie($cookieFactory->make($refreshToken['plain_text_token']));
     }
 }
