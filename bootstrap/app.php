@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\RequestId::class,
             \App\Http\Middleware\RequestLogger::class,
         ]);
+
+        $middleware->alias([
+            'auth.jwt' => \App\Http\Middleware\JwtAuthMiddleware::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Throwable $e, Request $request) {
