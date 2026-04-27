@@ -14,7 +14,7 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255'],
             'password' => ['required', 'string', 'min:8'],
             'full_name' => ['required', 'string', 'max:100'],
             'role' => ['required', 'in:client,worker'],
@@ -27,7 +27,6 @@ class RegisterRequest extends FormRequest
             'email.required' => __('auth.validation.email_required'),
             'email.email' => __('auth.validation.email_email'),
             'email.max' => __('auth.validation.email_max'),
-            'email.unique' => __('auth.validation.email_unique'),
             'password.required' => __('auth.validation.password_required'),
             'password.string' => __('auth.validation.password_string'),
             'password.min' => __('auth.validation.password_min'),

@@ -151,4 +151,9 @@ return [
         ],
     ],
 
+    'verification' => [
+        'ttl_seconds' => (int) env('AUTH_VERIFY_EMAIL_TTL_SECONDS', 3600),
+        'frontend_path' => env('AUTH_VERIFY_EMAIL_FRONTEND_PATH', '/verify-email'),
+    ],
+
 ];

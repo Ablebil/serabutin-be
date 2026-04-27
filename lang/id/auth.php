@@ -1,6 +1,18 @@
 <?php
 
 return [
+    'register' => [
+        'success' => 'Registrasi berhasil. Silakan cek email untuk verifikasi akun.',
+        'email_exists' => 'Email sudah terdaftar.',
+    ],
+    'mail' => [
+        'verify_subject' => 'Verifikasi Email Akun Serabutin',
+        'verify_greeting' => 'Halo, :name',
+        'verify_intro' => 'Terima kasih sudah mendaftar di Serabutin.',
+        'verify_action' => 'Klik tautan berikut untuk verifikasi email akun kamu:',
+        'verify_button' => 'Verifikasi Email',
+        'verify_outro' => 'Jika kamu tidak merasa membuat akun, abaikan email ini.',
+    ],
     'validation' => [
         'email_required' => 'Email harus diisi.',
         'email_email' => 'Format email tidak valid.',
