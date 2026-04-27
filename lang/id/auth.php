@@ -5,6 +5,10 @@ return [
         'success' => 'Registrasi berhasil. Silakan cek email untuk verifikasi akun.',
         'email_exists' => 'Email sudah terdaftar.',
     ],
+    'verify' => [
+        'success' => 'Email berhasil diverifikasi. Silakan login.',
+        'invalid_or_expired' => 'Token verifikasi tidak valid atau sudah kedaluwarsa.',
+    ],
     'mail' => [
         'verify_subject' => 'Verifikasi Email Akun Serabutin',
         'verify_greeting' => 'Halo, :name',
