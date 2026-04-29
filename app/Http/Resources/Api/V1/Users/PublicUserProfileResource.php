@@ -7,6 +7,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class PublicUserProfileResource extends JsonResource
 {
+    public function __construct(
+        mixed $resource,
+        private readonly bool $showPhone = false,
+    ) {
+        parent::__construct($resource);
+    }
+
     public function toArray(Request $request): array
     {
         return [
@@ -16,6 +23,7 @@ class PublicUserProfileResource extends JsonResource
             'location_district' => $this->location_district,
             'location_city' => $this->location_city,
             'avatar_url' => $this->avatar_url,
+            'phone' => $this->when($this->showPhone, $this->phone),
             'avg_rating' => $this->avg_rating,
             'total_jobs_posted' => $this->total_jobs_posted,
             'total_jobs_completed' => $this->total_jobs_completed,
@@ -24,3 +32,4 @@ class PublicUserProfileResource extends JsonResource
         ];
     }
 }
+

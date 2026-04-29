@@ -7,6 +7,7 @@ use App\Http\Requests\Api\V1\Users\UpdateProfileRequest;
 use App\Http\Resources\Api\V1\Users\PublicUserProfileResource;
 use App\Http\Resources\Api\V1\Users\UserProfileResource;
 use App\Http\Resources\Api\V1\Users\UserResource;
+use App\Models\JobAssignment;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -74,11 +75,24 @@ class UserController extends Controller
             return $this->error(__('users.show.not_found'), 404);
         }
 
+        $showPhone = false;
+
+        if ($target->role === 'worker') {
+            $viewer = $request->attributes->get('auth_user');
+
+            if (!is_null($viewer) && $viewer->role === 'client') {
+                $showPhone = JobAssignment::query()
+                    ->where('worker_id', $target->id)
+                    ->where('client_id', $viewer->id)
+                    ->exists();
+            }
+        }
+
         return $this->success(
             __('users.show.success'),
             [
                 'user' => new UserResource($target),
-                'profile' => new PublicUserProfileResource($target->profile),
+                'profile' => new PublicUserProfileResource($target->profile, $showPhone),
             ]
         );
     }

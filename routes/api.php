@@ -14,7 +14,7 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::prefix('users')->group(function (): void {
-        Route::get('/{id}', [UserController::class, 'show']);
+        Route::get('/{id}', [UserController::class, 'show'])->middleware('auth.jwt.optional');
 
         Route::middleware('auth.jwt')->group(function (): void {
             Route::get('/me', [UserController::class, 'me']);
