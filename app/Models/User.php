@@ -83,6 +83,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all jobs posted by this client.
+     */
+    public function postedJobs(): HasMany
+    {
+        return $this->hasMany(Job::class, 'client_id');
+    }
+
+    /**
      * Get all refresh token sessions for the user.
      */
     public function refreshTokens(): HasMany

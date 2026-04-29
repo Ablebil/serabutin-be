@@ -19,6 +19,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('auth.jwt')->group(function (): void {
             Route::get('/me', [UserController::class, 'me']);
             Route::patch('/me', [UserController::class, 'update']);
+            Route::get('/me/jobs', [UserController::class, 'postedJobs']);
         });
     });
 });
