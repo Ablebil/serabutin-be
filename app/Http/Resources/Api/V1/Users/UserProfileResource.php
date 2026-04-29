@@ -7,6 +7,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserProfileResource extends JsonResource
 {
+    public function __construct(
+        mixed $resource,
+        private readonly ?array $categoryRatings = null,
+    ) {
+        parent::__construct($resource);
+    }
+
     public function toArray(Request $request): array
     {
         return [
@@ -20,6 +27,10 @@ class UserProfileResource extends JsonResource
             'avg_rating' => $this->avg_rating,
             'total_jobs_posted' => $this->total_jobs_posted,
             'total_jobs_completed' => $this->total_jobs_completed,
+            'category_ratings' => $this->when(
+                !is_null($this->categoryRatings),
+                $this->categoryRatings
+            ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

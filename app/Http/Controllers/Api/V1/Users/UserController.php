@@ -11,22 +11,32 @@ use App\Http\Resources\Api\V1\Users\UserProfileResource;
 use App\Http\Resources\Api\V1\Users\UserResource;
 use App\Models\JobAssignment;
 use App\Models\User;
+use App\Services\Users\ProfileSummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private readonly ProfileSummaryService $profileSummary,
+    ) {
+    }
+
     public function me(Request $request): JsonResponse
     {
         $user = $request->attributes->get('auth_user');
 
         $user->loadMissing('profile');
 
+        $categoryRatings = $user->role === 'worker'
+            ? $this->profileSummary->getCategoryRatings($user)
+            : null;
+
         return $this->success(
             __('users.me.success'),
             [
                 'user' => new UserResource($user),
-                'profile' => new UserProfileResource($user->profile),
+                'profile' => new UserProfileResource($user->profile, $categoryRatings),
             ]
         );
     }
@@ -90,11 +100,15 @@ class UserController extends Controller
             }
         }
 
+        $categoryRatings = $target->role === 'worker'
+            ? $this->profileSummary->getCategoryRatings($target)
+            : null;
+
         return $this->success(
             __('users.show.success'),
             [
                 'user' => new UserResource($target),
-                'profile' => new PublicUserProfileResource($target->profile, $showPhone),
+                'profile' => new PublicUserProfileResource($target->profile, $showPhone, $categoryRatings),
             ]
         );
     }
