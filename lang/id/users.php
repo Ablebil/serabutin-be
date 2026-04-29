@@ -20,4 +20,16 @@ return [
     'assignments' => [
         'success' => 'Daftar assignment berhasil diambil.',
     ],
+    'validation' => [
+        'full_name_string' => 'Nama lengkap harus berupa teks.',
+        'full_name_max' => 'Nama lengkap maksimal 100 karakter.',
+        'bio_string' => 'Bio harus berupa teks.',
+        'bio_max' => 'Bio maksimal 500 karakter.',
+        'location_district_string' => 'Kecamatan harus berupa teks.',
+        'location_district_max' => 'Kecamatan maksimal 100 karakter.',
+        'location_city_string' => 'Kota harus berupa teks.',
+        'location_city_max' => 'Kota maksimal 100 karakter.',
+        'phone_string' => 'Nomor telepon harus berupa teks.',
+        'phone_max' => 'Nomor telepon maksimal 20 karakter.',
+    ],
 ];

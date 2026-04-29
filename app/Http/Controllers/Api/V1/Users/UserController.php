@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Users;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Users\UpdateProfileRequest;
 use App\Http\Resources\Api\V1\Users\UserProfileResource;
 use App\Http\Resources\Api\V1\Users\UserResource;
 use Illuminate\Http\JsonResponse;
@@ -25,8 +26,38 @@ class UserController extends Controller
         );
     }
 
-    public function update()
+    public function update(UpdateProfileRequest $request): JsonResponse
     {
+        $user = $request->attributes->get('auth_user');
+
+        $payload = $request->validated();
+
+        if (array_key_exists('full_name', $payload)) {
+            $user->full_name = $payload['full_name'];
+            $user->save();
+        }
+
+        $profileFields = array_intersect_key($payload, array_flip([
+            'bio',
+            'location_district',
+            'location_city',
+            'phone',
+        ]));
+
+        if (!empty($profileFields)) {
+            $user->profile()->update($profileFields);
+        }
+
+        $user->loadMissing('profile');
+        $user->profile->refresh();
+
+        return $this->success(
+            __('users.update.success'),
+            [
+                'user' => new UserResource($user),
+                'profile' => new UserProfileResource($user->profile),
+            ]
+        );
     }
 
     public function show()
