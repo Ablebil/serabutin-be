@@ -13,8 +13,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth.jwt');
     });
 
-    Route::prefix('users')->middleware('auth.jwt')->group(function (): void {
-        Route::get('/me', [UserController::class, 'me']);
-        Route::patch('/me', [UserController::class, 'update']);
+    Route::prefix('users')->group(function (): void {
+        Route::get('/{id}', [UserController::class, 'show']);
+
+        Route::middleware('auth.jwt')->group(function (): void {
+            Route::get('/me', [UserController::class, 'me']);
+            Route::patch('/me', [UserController::class, 'update']);
+        });
     });
 });

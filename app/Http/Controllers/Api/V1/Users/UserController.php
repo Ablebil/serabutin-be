@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\V1\Users;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Users\UpdateProfileRequest;
+use App\Http\Resources\Api\V1\Users\PublicUserProfileResource;
 use App\Http\Resources\Api\V1\Users\UserProfileResource;
 use App\Http\Resources\Api\V1\Users\UserResource;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -60,8 +62,25 @@ class UserController extends Controller
         );
     }
 
-    public function show()
+    public function show(Request $request, string $id): JsonResponse
     {
+        $target = User::query()
+            ->where('id', $id)
+            ->where('is_active', true)
+            ->with('profile')
+            ->first();
+
+        if (is_null($target)) {
+            return $this->error(__('users.show.not_found'), 404);
+        }
+
+        return $this->success(
+            __('users.show.success'),
+            [
+                'user' => new UserResource($target),
+                'profile' => new PublicUserProfileResource($target->profile),
+            ]
+        );
     }
 
     public function postedJobs()
