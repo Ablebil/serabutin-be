@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Users;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Users\UpdateProfileRequest;
+use App\Http\Resources\Api\V1\Bids\BidResource;
 use App\Http\Resources\Api\V1\Jobs\JobResource;
 use App\Http\Resources\Api\V1\Users\PublicUserProfileResource;
 use App\Http\Resources\Api\V1\Users\UserProfileResource;
@@ -125,8 +126,27 @@ class UserController extends Controller
         );
     }
 
-    public function bidHistory()
+    public function bidHistory(Request $request): JsonResponse
     {
+        $user = $request->attributes->get('auth_user');
+
+        $query = $user->bids()
+            ->with('job')
+            ->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        $paginator = $query->paginate(
+            perPage: (int) $request->input('per_page', 15)
+        );
+
+        return $this->paginated(
+            __('users.bid_history.success'),
+            BidResource::collection($paginator),
+            $paginator
+        );
     }
 
     public function assignments()

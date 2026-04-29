@@ -91,6 +91,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all bids placed by this worker.
+     */
+    public function bids(): HasMany
+    {
+        return $this->hasMany(Bid::class, 'worker_id');
+    }
+
+    /**
      * Get all refresh token sessions for the user.
      */
     public function refreshTokens(): HasMany

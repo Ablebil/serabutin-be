@@ -20,6 +20,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/me', [UserController::class, 'me']);
             Route::patch('/me', [UserController::class, 'update']);
             Route::get('/me/jobs', [UserController::class, 'postedJobs']);
+            Route::get('/me/bids', [UserController::class, 'bidHistory']);
         });
     });
 });
