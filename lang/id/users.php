@@ -20,6 +20,20 @@ return [
     'assignments' => [
         'success' => 'Daftar assignment berhasil diambil.',
     ],
+    'reviews' => [
+        'success' => 'Daftar review berhasil diambil.',
+    ],
+    'public_jobs' => [
+        'success' => 'Daftar pekerjaan berhasil diambil.',
+        'not_a_client' => 'Pengguna ini bukan client.',
+    ],
+    'public_assignments' => [
+        'success' => 'Daftar pekerjaan berhasil diambil.',
+        'not_a_worker' => 'Pengguna ini bukan worker.',
+    ],
+    'public_reviews' => [
+        'success' => 'Daftar review berhasil diambil.',
+    ],
     'validation' => [
         'full_name_string' => 'Nama lengkap harus berupa teks.',
         'full_name_max' => 'Nama lengkap maksimal 100 karakter.',

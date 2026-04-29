@@ -20,8 +20,14 @@ Route::prefix('v1')->group(function () {
             Route::get('/me/jobs', [UserController::class, 'postedJobs'])->middleware('role:client');
             Route::get('/me/bids', [UserController::class, 'bidHistory'])->middleware('role:worker');
             Route::get('/me/assignments', [UserController::class, 'assignments'])->middleware('role:worker');
+            Route::get('/me/reviews', [UserController::class, 'reviews']);
         });
 
-        Route::get('/{id}', [UserController::class, 'show'])->middleware('auth.jwt.optional');
+        Route::middleware('auth.jwt.optional')->group(function (): void {
+            Route::get('/{id}', [UserController::class, 'show']);
+            Route::get('/{id}/jobs', [UserController::class, 'publicJobs']);
+            Route::get('/{id}/assignments', [UserController::class, 'publicAssignments']);
+            Route::get('/{id}/reviews', [UserController::class, 'publicReviews']);
+        });
     });
 });

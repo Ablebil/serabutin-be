@@ -107,6 +107,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all reviews received by this user (as reviewee).
+     */
+    public function receivedReviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'reviewee_id');
+    }
+
+    /**
      * Get all refresh token sessions for the user.
      */
     public function refreshTokens(): HasMany
