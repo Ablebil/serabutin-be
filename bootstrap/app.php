@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'auth.jwt' => \App\Http\Middleware\JwtAuthMiddleware::class,
+            'auth.jwt.optional' => \App\Http\Middleware\OptionalJwtAuthMiddleware::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
     })
@@ -33,13 +34,6 @@ return Application::configure(basePath: dirname(__DIR__))
                         'status' => 'error',
                         'message' => __('general.unauthenticated'),
                     ], 401);
-                }
-
-                if ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => __('general.forbidden'),
-                    ], 403);
                 }
 
                 if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
