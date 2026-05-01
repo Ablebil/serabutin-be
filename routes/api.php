@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Categories\CategoryController;
 use App\Http\Controllers\Api\V1\Users\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,5 +30,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/{id}/assignments', [UserController::class, 'publicAssignments']);
             Route::get('/{id}/reviews', [UserController::class, 'publicReviews']);
         });
+    });
+
+    Route::prefix('categories')->group(function (): void {
+        Route::get('/', [CategoryController::class, 'index']);
     });
 });
