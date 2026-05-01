@@ -83,6 +83,38 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all jobs posted by this client.
+     */
+    public function postedJobs(): HasMany
+    {
+        return $this->hasMany(Job::class, 'client_id');
+    }
+
+    /**
+     * Get all bids placed by this worker.
+     */
+    public function bids(): HasMany
+    {
+        return $this->hasMany(Bid::class, 'worker_id');
+    }
+
+    /**
+     * Get all job assignments for this worker.
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(JobAssignment::class, 'worker_id');
+    }
+
+    /**
+     * Get all reviews received by this user (as reviewee).
+     */
+    public function receivedReviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'reviewee_id');
+    }
+
+    /**
      * Get all refresh token sessions for the user.
      */
     public function refreshTokens(): HasMany
