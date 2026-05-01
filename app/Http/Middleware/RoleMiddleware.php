@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use App\Models\User;
 use Closure;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,7 +23,10 @@ class RoleMiddleware
         }
 
         if (!in_array($user->role, $roles, true)) {
-            throw new AuthorizationException(__('general.forbidden'));
+            return response()->json([
+                'status' => 'error',
+                'message' => __('general.forbidden'),
+            ], 403);
         }
 
         return $next($request);

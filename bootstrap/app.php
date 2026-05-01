@@ -36,13 +36,6 @@ return Application::configure(basePath: dirname(__DIR__))
                     ], 401);
                 }
 
-                if ($e instanceof \Illuminate\Auth\Access\AuthorizationException) {
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => __('general.forbidden'),
-                    ], 403);
-                }
-
                 if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
                     return response()->json([
                         'status' => 'error',
