@@ -61,7 +61,7 @@ class UserController extends Controller
             'avatar_url',
         ];
 
-        if ($user->role === 'worker') {
+        if ($user->role === 'client') {
             $allowedProfileFields[] = 'phone';
         }
 
@@ -101,13 +101,13 @@ class UserController extends Controller
 
         $showPhone = false;
 
-        if ($target->role === 'worker') {
+        if ($target->role === 'client') {
             $viewer = $request->attributes->get('auth_user');
 
-            if (!is_null($viewer) && $viewer->role === 'client') {
+            if (!is_null($viewer) && $viewer->role === 'worker') {
                 $showPhone = JobAssignment::query()
-                    ->where('worker_id', $target->id)
-                    ->where('client_id', $viewer->id)
+                    ->where('client_id', $target->id)
+                    ->where('worker_id', $viewer->id)
                     ->exists();
             }
         }

@@ -740,7 +740,7 @@ paths:
         - Users
       summary: Update authenticated user profile
       description: Update profile of the currently authenticated user. All fields are
-        optional. Phone field is only applicable for workers.
+        optional. Phone field is only applicable for clients.
       security:
         - BearerAuth: []
       requestBody:
