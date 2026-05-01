@@ -129,7 +129,7 @@ class UsersFlowTest extends TestCase
             'location_district' => 'Lowokwaru',
             'location_city' => 'Kota Malang',
             'phone' => '081234567890',
-        ])->create(['role' => 'worker']);
+        ])->create(['role' => 'client']);
 
         $response = $this->patchJson('/api/v1/users/me', [
             'full_name' => 'Updated Name',
@@ -147,7 +147,7 @@ class UsersFlowTest extends TestCase
         $this->assertDatabaseHas('user_profiles', ['user_id' => $user->id, 'bio' => 'Updated Bio', 'phone' => '08999999999']);
     }
 
-    public function test_update_me_ignores_phone_for_client()
+    public function test_update_me_allows_phone_for_client()
     {
         $user = UserFactory::new()->withProfile([
             'bio' => 'Test Bio',
@@ -155,6 +155,23 @@ class UsersFlowTest extends TestCase
             'location_city' => 'Kota Malang',
             'phone' => '081234567890',
         ])->create(['role' => 'client']);
+
+        $response = $this->patchJson('/api/v1/users/me', [
+            'phone' => '08999999999',
+        ], $this->getHeaders($user));
+
+        $response->assertOk();
+        $this->assertDatabaseHas('user_profiles', ['user_id' => $user->id, 'phone' => '08999999999']);
+    }
+
+    public function test_update_me_ignores_phone_for_worker()
+    {
+        $user = UserFactory::new()->withProfile([
+            'bio' => 'Test Bio',
+            'location_district' => 'Lowokwaru',
+            'location_city' => 'Kota Malang',
+            'phone' => '081234567890',
+        ])->create(['role' => 'worker']);
 
         $response = $this->patchJson('/api/v1/users/me', [
             'phone' => '08999999999',
@@ -364,20 +381,19 @@ class UsersFlowTest extends TestCase
             ->assertJsonPath('data.profile.phone', null); // Phone hidden by default
     }
 
-    public function test_public_profile_shows_worker_phone_to_assigned_client()
+    public function test_public_profile_shows_client_phone_to_assigned_worker()
     {
-        $worker = UserFactory::new()->withProfile([
-            'bio' => 'Test Bio',
-            'location_district' => 'Lowokwaru',
-            'location_city' => 'Kota Malang',
-            'phone' => '081234567890',
-        ])->create(['role' => 'worker']);
         $client = UserFactory::new()->withProfile([
             'bio' => 'Test Bio',
             'location_district' => 'Lowokwaru',
             'location_city' => 'Kota Malang',
             'phone' => '081234567890',
         ])->create(['role' => 'client']);
+        $worker = UserFactory::new()->withProfile([
+            'bio' => 'Test Bio',
+            'location_district' => 'Lowokwaru',
+            'location_city' => 'Kota Malang',
+        ])->create(['role' => 'worker']);
 
         $category = CategoryFactory::new()->create();
 
@@ -396,11 +412,11 @@ class UsersFlowTest extends TestCase
             'bid_id' => $bid->id,
         ]);
 
-        $response = $this->getJson('/api/v1/users/' . $worker->id, $this->getHeaders($client));
+        $response = $this->getJson('/api/v1/users/' . $client->id, $this->getHeaders($worker));
 
         $response->assertOk()
             ->assertJsonPath('status', 'success')
-            ->assertJsonPath('data.user.id', $worker->id)
+            ->assertJsonPath('data.user.id', $client->id)
             ->assertJsonPath('data.profile.phone', '081234567890');
     }
 }
