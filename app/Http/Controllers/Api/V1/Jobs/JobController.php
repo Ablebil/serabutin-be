@@ -156,7 +156,7 @@ class JobController extends Controller
         }
 
         if ($job->status !== 'open') {
-            return $this->error(__('jobs.delete.not_open'), 403);
+            return $this->error(__('jobs.destroy.not_open'), 403);
         }
 
         DB::transaction(function () use ($job, $request) {
