@@ -18,9 +18,45 @@ class JobController extends Controller
     ) {
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return $this->success('Jobs feed');
+        $perPage = (int) $request->input('limit', 10);
+
+        $query = Job::query()
+            ->where('status', 'open')
+            ->with(['client', 'category']);
+
+        if ($request->filled('category_slug')) {
+            $query->whereHas('category', fn($q) => $q->where('slug', $request->input('category_slug')));
+        }
+
+        if ($request->filled('city')) {
+            $query->where('location_city', $request->input('city'));
+        }
+
+        if ($request->filled('budget_min')) {
+            $query->where('budget_max', '>=', $request->input('budget_min'));
+        }
+
+        if ($request->filled('budget_max')) {
+            $query->where('budget_min', '<=', $request->input('budget_max'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+
+        $paginator = $query->cursorPaginate(perPage: $perPage);
+
+        return $this->cursor(
+            __('jobs.index.success'),
+            JobResource::collection($paginator->items()),
+            $paginator
+        );
     }
 
     public function store(StoreJobRequest $request): JsonResponse
