@@ -56,5 +56,6 @@ return [
         'signature_invalid' => 'Signature access token tidak valid.',
         'issuer_invalid' => 'Issuer access token tidak sesuai.',
         'audience_invalid' => 'Audience access token tidak sesuai.',
+        'forbidden' => 'Akses ditolak.',
     ],
 ];
