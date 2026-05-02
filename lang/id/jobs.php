@@ -13,6 +13,7 @@ return [
     ],
     'update' => [
         'success' => 'Pekerjaan berhasil diperbarui.',
+        'not_open' => 'Pekerjaan tidak dalam status open.',
     ],
     'destroy' => [
         'success' => 'Pekerjaan berhasil dihapus.',
