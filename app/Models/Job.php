@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Bid;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Job extends Model
@@ -63,11 +65,11 @@ class Job extends Model
     protected function casts(): array
     {
         return [
-            'budget_min'     => 'decimal:2',
-            'budget_max'     => 'decimal:2',
+            'budget_min' => 'decimal:2',
+            'budget_max' => 'decimal:2',
             'workers_needed' => 'integer',
-            'start_at'       => 'datetime',
-            'deadline_at'    => 'datetime',
+            'start_at' => 'datetime',
+            'deadline_at' => 'datetime',
         ];
     }
 
@@ -85,5 +87,29 @@ class Job extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Check if this job has any accepted bids.
+     */
+    public function hasAcceptedBids(): bool
+    {
+        return $this->bids()->where('status', 'accepted')->exists();
+    }
+
+    /**
+     * Get the bids for this job.
+     */
+    public function bids(): HasMany
+    {
+        return $this->hasMany(Bid::class);
+    }
+
+    /**
+     * Get the assignments for this job.
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(JobAssignment::class);
     }
 }
