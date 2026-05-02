@@ -50,6 +50,11 @@ class JobController extends Controller
             $query->whereDate('created_at', '<=', $request->input('date_to'));
         }
 
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $query->whereRaw("to_tsvector('simple', title) @@ websearch_to_tsquery('simple', ?)", [$search]);
+        }
+
         $paginator = $query->cursorPaginate(perPage: $perPage);
 
         return $this->cursor(
