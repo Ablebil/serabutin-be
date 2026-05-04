@@ -30,15 +30,18 @@ class UploadController extends Controller
 
         $file = $request->file('file');
 
-        $extension = $file->getClientOriginalExtension() === 'png' ? 'png' : 'jpg';
+        $extension = $file->extension();
         $filename = (string) Str::uuid() . '.' . $extension;
         $path = 'avatars/' . $filename;
 
-        Storage::disk('public')->putFileAs('avatars', $file, $filename);
+        $diskName = config('filesystems.default');
+        $disk = Storage::disk($diskName);
+
+        $disk->putFileAs('avatars', $file, $filename);
 
         return $this->success(
             __('uploads.upload.success'),
-            ['url' => url('/storage/' . $path)],
+            ['url' => Storage::url($path)],
             201
         );
     }

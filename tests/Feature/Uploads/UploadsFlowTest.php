@@ -15,6 +15,7 @@ use Throwable;
 class UploadsFlowTest extends TestCase
 {
     private string $testSchema;
+    private string $diskName;
 
     protected function setUp(): void
     {
@@ -42,7 +43,8 @@ class UploadsFlowTest extends TestCase
 
         $this->artisan('migrate:fresh');
 
-        Storage::fake('public');
+        $this->diskName = config('filesystems.default');
+        Storage::fake($this->diskName);
     }
 
     protected function tearDown(): void
@@ -125,9 +127,10 @@ class UploadsFlowTest extends TestCase
         $url = (string) $response->json('data.url');
         $this->assertNotSame('', $url);
 
-        // Extract path from URL: /storage/avatars/filename.jpg
-        $path = str_replace(url('/storage/'), '', $url);
-        Storage::disk('public')->assertExists(ltrim($path, '/'));
+        $path = parse_url($url, PHP_URL_PATH);
+        $path = preg_replace('#^/storage/#', '', $path);
+
+        Storage::assertExists($path);
     }
 
     public function test_upload_rejects_non_image_files(): void
