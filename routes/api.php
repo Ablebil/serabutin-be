@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Categories\CategoryController;
+use App\Http\Controllers\Api\V1\Jobs\JobController;
+use App\Http\Controllers\Api\V1\Uploads\UploadController;
 use App\Http\Controllers\Api\V1\Users\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,5 +36,20 @@ Route::prefix('v1')->group(function () {
 
     Route::prefix('categories')->group(function (): void {
         Route::get('/', [CategoryController::class, 'index']);
+    });
+  
+    Route::prefix('jobs')->middleware('auth.jwt')->group(function (): void {
+        Route::get('/', [JobController::class, 'index']);
+        Route::post('/', [JobController::class, 'store'])->middleware('role:client');
+        Route::prefix('{id}')->group(function (): void {
+            Route::get('/', [JobController::class, 'show']);
+            Route::patch('/', [JobController::class, 'update'])->middleware('role:client');
+            Route::delete('/', [JobController::class, 'destroy'])->middleware('role:client');
+            Route::patch('/status', [JobController::class, 'updateStatus'])->middleware('role:client');
+        });
+    });
+
+    Route::prefix('uploads')->middleware('auth.jwt')->group(function (): void {
+        Route::post('/', [UploadController::class, 'store']);
     });
 });

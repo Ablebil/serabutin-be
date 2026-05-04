@@ -214,7 +214,7 @@ class UserController extends Controller
         $user = $request->attributes->get('auth_user');
 
         $query = $user->receivedReviews()
-            ->with(['reviewer', 'reviewee'])
+            ->with(['reviewer', 'reviewee', 'assignment.job.category'])
             ->latest();
 
         $paginator = $query->paginate(
@@ -309,7 +309,7 @@ class UserController extends Controller
         }
 
         $query = $target->receivedReviews()
-            ->with(['reviewer', 'reviewee'])
+            ->with(['reviewer', 'reviewee', 'assignment.job.category'])
             ->latest();
 
         $paginator = $query->paginate(

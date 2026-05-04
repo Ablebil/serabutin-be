@@ -333,6 +333,9 @@ components:
           $ref: "#/components/schemas/PublicUserObject"
         reviewee:
           $ref: "#/components/schemas/PublicUserObject"
+        category:
+          $ref: "#/components/schemas/CategoryObject"
+          description: Category of the job being reviewed.
         rating:
           type: integer
           minimum: 1
