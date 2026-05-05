@@ -9,7 +9,6 @@ use App\Http\Requests\Api\V1\Jobs\UpdateJobStatusRequest;
 use App\Http\Resources\Api\V1\Jobs\JobResource;
 use App\Http\Resources\Api\V1\Users\PublicUserResource;
 use App\Models\Job;
-use App\Models\Review;
 use App\Services\Users\ProfileSummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -225,15 +224,10 @@ class JobController extends Controller
 
         $assignments = $job->assignments()->with('worker')->get();
 
-        $response = $assignments->map(function ($assignment) use ($user) {
-            $alreadyReviewed = Review::where('reviewer_id', $user->id)
-                ->where('assignment_id', $assignment->id)
-                ->exists();
-
+        $response = $assignments->map(function ($assignment) {
             return [
                 'assignment_id' => $assignment->id,
                 'worker' => PublicUserResource::make($assignment->worker),
-                'already_reviewed' => $alreadyReviewed,
             ];
         });
 

@@ -4,7 +4,6 @@ namespace Tests\Feature\Jobs;
 
 use App\Models\Job;
 use App\Models\JobAssignment;
-use App\Models\Review;
 use App\Models\User;
 use App\Services\Auth\JwtService;
 use Database\Factories\CategoryFactory;
@@ -616,19 +615,11 @@ class JobsFlowTest extends TestCase
             'client_id' => $this->client->id,
             'bid_id' => $bid1->id,
         ]);
-        $assignment2 = JobAssignment::create([
+        JobAssignment::create([
             'job_id' => $job->id,
             'worker_id' => $worker2->id,
             'client_id' => $this->client->id,
             'bid_id' => $bid2->id,
-        ]);
-
-        Review::create([
-            'assignment_id' => $assignment2->id,
-            'reviewer_id' => $this->client->id,
-            'reviewee_id' => $worker2->id,
-            'rating' => 5,
-            'comment' => 'Great work',
         ]);
 
         $response = $this->withToken($this->getToken($this->client))
@@ -643,12 +634,6 @@ class JobsFlowTest extends TestCase
         $workerIds = collect($data)->pluck('worker.id')->toArray();
         expect($workerIds)->toContain($this->worker->id);
         expect($workerIds)->toContain($worker2->id);
-
-        $unreviewed = collect($data)->firstWhere('worker.id', $this->worker->id);
-        $reviewed = collect($data)->firstWhere('worker.id', $worker2->id);
-
-        expect($unreviewed['already_reviewed'])->toBeFalse();
-        expect($reviewed['already_reviewed'])->toBeTrue();
     }
 
     public function test_get_workers_returns_workers_for_assigned_worker(): void
