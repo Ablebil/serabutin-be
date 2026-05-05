@@ -3,6 +3,8 @@
 namespace Tests\Feature\Jobs;
 
 use App\Models\Job;
+use App\Models\JobAssignment;
+use App\Models\Review;
 use App\Models\User;
 use App\Services\Auth\JwtService;
 use Database\Factories\CategoryFactory;
@@ -554,5 +556,143 @@ class JobsFlowTest extends TestCase
             'user_id' => $this->worker->id,
             'total_jobs_completed' => 1,
         ]);
+    }
+
+    public function test_get_workers_requires_authentication(): void
+    {
+        $job = JobFactory::new()->create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->categoryId,
+            'status' => 'open',
+        ]);
+
+        $this->getJson('/api/v1/jobs/' . $job->id . '/workers')
+            ->assertStatus(401);
+    }
+
+    public function test_get_workers_returns_404_for_nonexistent_job(): void
+    {
+        $this->withToken($this->getToken($this->client))
+            ->getJson('/api/v1/jobs/' . fake()->uuid() . '/workers')
+            ->assertStatus(404);
+    }
+
+    public function test_get_workers_returns_403_for_unauthorized_user(): void
+    {
+        $job = JobFactory::new()->create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->categoryId,
+            'status' => 'in_progress',
+        ]);
+
+        $this->withToken($this->getToken($this->otherClient))
+            ->getJson('/api/v1/jobs/' . $job->id . '/workers')
+            ->assertStatus(403);
+    }
+
+    public function test_get_workers_returns_workers_for_job_owner(): void
+    {
+        $job = JobFactory::new()->create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->categoryId,
+            'status' => 'in_progress',
+        ]);
+
+        $worker2 = UserFactory::new()->create(['role' => 'worker']);
+        UserProfileFactory::new()->create(['user_id' => $worker2->id, 'total_jobs_completed' => 0]);
+
+        $bid1 = \Database\Factories\BidFactory::new()->create([
+            'job_id' => $job->id,
+            'worker_id' => $this->worker->id,
+        ]);
+        $bid2 = \Database\Factories\BidFactory::new()->create([
+            'job_id' => $job->id,
+            'worker_id' => $worker2->id,
+        ]);
+
+        JobAssignment::create([
+            'job_id' => $job->id,
+            'worker_id' => $this->worker->id,
+            'client_id' => $this->client->id,
+            'bid_id' => $bid1->id,
+        ]);
+        $assignment2 = JobAssignment::create([
+            'job_id' => $job->id,
+            'worker_id' => $worker2->id,
+            'client_id' => $this->client->id,
+            'bid_id' => $bid2->id,
+        ]);
+
+        Review::create([
+            'assignment_id' => $assignment2->id,
+            'reviewer_id' => $this->client->id,
+            'reviewee_id' => $worker2->id,
+            'rating' => 5,
+            'comment' => 'Great work',
+        ]);
+
+        $response = $this->withToken($this->getToken($this->client))
+            ->getJson('/api/v1/jobs/' . $job->id . '/workers');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', 'success');
+
+        $data = $response->json('data');
+        expect(count($data))->toBe(2);
+
+        $workerIds = collect($data)->pluck('worker.id')->toArray();
+        expect($workerIds)->toContain($this->worker->id);
+        expect($workerIds)->toContain($worker2->id);
+
+        $unreviewed = collect($data)->firstWhere('worker.id', $this->worker->id);
+        $reviewed = collect($data)->firstWhere('worker.id', $worker2->id);
+
+        expect($unreviewed['already_reviewed'])->toBeFalse();
+        expect($reviewed['already_reviewed'])->toBeTrue();
+    }
+
+    public function test_get_workers_returns_workers_for_assigned_worker(): void
+    {
+        $job = JobFactory::new()->create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->categoryId,
+            'status' => 'in_progress',
+        ]);
+
+        $bid = \Database\Factories\BidFactory::new()->create([
+            'job_id' => $job->id,
+            'worker_id' => $this->worker->id,
+        ]);
+
+        JobAssignment::create([
+            'job_id' => $job->id,
+            'worker_id' => $this->worker->id,
+            'client_id' => $this->client->id,
+            'bid_id' => $bid->id,
+        ]);
+
+        $response = $this->withToken($this->getToken($this->worker))
+            ->getJson('/api/v1/jobs/' . $job->id . '/workers');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', 'success');
+
+        expect(count($response->json('data')))->toBe(1);
+    }
+
+    public function test_get_workers_returns_empty_array_when_no_assignments(): void
+    {
+        $job = JobFactory::new()->create([
+            'client_id' => $this->client->id,
+            'category_id' => $this->categoryId,
+            'status' => 'open',
+        ]);
+
+        $response = $this->withToken($this->getToken($this->client))
+            ->getJson('/api/v1/jobs/' . $job->id . '/workers');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', 'success')
+            ->assertJsonCount(0, 'data');
     }
 }
