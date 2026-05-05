@@ -2075,9 +2075,6 @@ paths:
                           example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
                         worker:
                           $ref: "#/components/schemas/PublicUserObject"
-                        already_reviewed:
-                          type: boolean
-                          example: true
         "401":
           description: Unauthenticated
           content:
