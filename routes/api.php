@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Bids\BidActionController;
+use App\Http\Controllers\Api\V1\Bids\BidController;
 use App\Http\Controllers\Api\V1\Categories\CategoryController;
 use App\Http\Controllers\Api\V1\Jobs\JobController;
 use App\Http\Controllers\Api\V1\Uploads\UploadController;
@@ -47,7 +49,15 @@ Route::prefix('v1')->group(function () {
             Route::delete('/', [JobController::class, 'destroy'])->middleware('role:client');
             Route::patch('/status', [JobController::class, 'updateStatus'])->middleware('role:client');
             Route::get('/workers', [JobController::class, 'getWorkers']);
+            Route::get('/bids', [BidController::class, 'index'])->middleware('role:client');
+            Route::post('/bids', [BidController::class, 'store'])->middleware('role:worker');
         });
+    });
+
+    Route::prefix('bids')->middleware('auth.jwt')->group(function (): void {
+        Route::delete('/{id}', [BidController::class, 'cancel'])->middleware('role:worker');
+        Route::patch('/{id}/accept', [BidActionController::class, 'accept'])->middleware('role:client');
+        Route::patch('/{id}/reject', [BidActionController::class, 'reject'])->middleware('role:client');
     });
 
     Route::prefix('uploads')->middleware('auth.jwt')->group(function (): void {
