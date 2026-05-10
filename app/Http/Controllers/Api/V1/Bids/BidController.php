@@ -91,6 +91,27 @@ class BidController extends Controller
 
     public function cancel(CancelBidRequest $request, string $id): JsonResponse
     {
-        return $this->error('Not implemented.', 501);
+        $user = $request->attributes->get('auth_user');
+        $bid = Bid::query()->find($id);
+
+        if (is_null($bid)) {
+            return $this->error(__('bids.cancel.not_found'), 404);
+        }
+
+        if ($bid->worker_id !== $user->id) {
+            return $this->error(__('auth.jwt.forbidden'), 403);
+        }
+
+        if ($bid->status !== 'pending') {
+            return $this->error(__('bids.cancel.not_pending'), 403);
+        }
+
+        $bid->update(['status' => 'withdrawn']);
+        $bid->load('worker');
+
+        return $this->success(
+            __('bids.cancel.success'),
+            new BidResource($bid)
+        );
     }
 }

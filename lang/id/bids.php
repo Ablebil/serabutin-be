@@ -12,4 +12,9 @@ return [
         'already_bid' => 'Kamu sudah mengirim bid untuk pekerjaan ini.',
         'own_job' => 'Kamu tidak bisa mengirim bid pada pekerjaanmu sendiri.',
     ],
+    'cancel' => [
+        'success' => 'Bid berhasil dibatalkan.',
+        'not_found' => 'Bid tidak ditemukan.',
+        'not_pending' => 'Bid tidak bisa dibatalkan karena statusnya bukan pending.',
+    ],
 ];
