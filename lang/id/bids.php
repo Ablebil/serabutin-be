@@ -23,4 +23,12 @@ return [
         'job_not_found' => 'Pekerjaan tidak ditemukan.',
         'not_pending' => 'Bid tidak bisa ditolak karena statusnya bukan pending.',
     ],
+    'accept' => [
+        'success' => 'Bid berhasil diterima.',
+        'not_found' => 'Bid tidak ditemukan.',
+        'job_not_found' => 'Pekerjaan tidak ditemukan.',
+        'job_not_open' => 'Pekerjaan tidak bisa menerima bid.',
+        'not_pending' => 'Bid tidak bisa diterima karena statusnya bukan pending.',
+        'slots_full' => 'Kuota pekerja sudah penuh.',
+    ],
 ];
