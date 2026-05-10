@@ -14,8 +14,6 @@ class BidResource extends JsonResource
             'id' => $this->id,
             'worker' => $this->whenLoaded('worker', fn() => new PublicUserResource($this->worker)),
             'proposed_price' => $this->proposed_price,
-            'estimated_duration_hours' => $this->estimated_duration_hours,
-            'message' => $this->message,
             'status' => $this->status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
