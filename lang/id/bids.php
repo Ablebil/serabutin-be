@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'index' => [
+        'success' => 'Daftar bid berhasil diambil.',
+        'job_not_found' => 'Pekerjaan tidak ditemukan.',
+    ],
     'store' => [
         'success' => 'Bid berhasil dikirim.',
         'job_not_found' => 'Pekerjaan tidak ditemukan.',

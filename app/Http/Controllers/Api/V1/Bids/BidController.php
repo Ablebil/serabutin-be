@@ -15,7 +15,34 @@ class BidController extends Controller
 {
     public function index(ListBidsRequest $request, string $id): JsonResponse
     {
-        return $this->error('Not implemented.', 501);
+        $user = $request->attributes->get('auth_user');
+        $job = Job::find($id);
+
+        if (is_null($job) || !is_null($job->deleted_at)) {
+            return $this->error(__('bids.index.job_not_found'), 404);
+        }
+
+        if ($job->client_id !== $user->id) {
+            return $this->error(__('auth.jwt.forbidden'), 403);
+        }
+
+        $query = $job->bids()
+            ->with('worker')
+            ->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        $paginator = $query->paginate(
+            perPage: (int) $request->input('limit', 10)
+        );
+
+        return $this->paginated(
+            __('bids.index.success'),
+            BidResource::collection($paginator),
+            $paginator
+        );
     }
 
     public function store(StoreBidRequest $request, string $id): JsonResponse
