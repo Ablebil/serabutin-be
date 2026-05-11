@@ -2329,6 +2329,7 @@ paths:
                 proposed_price:
                   type: number
                   minimum: 0
+                  description: Must be between the job's budget_min and budget_max.
                   example: 90000
       responses:
         "201":
