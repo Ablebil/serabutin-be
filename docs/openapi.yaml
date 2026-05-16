@@ -71,7 +71,7 @@ components:
       type: object
       properties:
         next_cursor:
-          type: [ string, "null" ]
+          type: [string, "null"]
           example: eyJpZCI6IjAxOTMyYjJhIn0=
         per_page:
           type: integer
@@ -96,7 +96,7 @@ components:
           example: John Doe
         role:
           type: string
-          enum: [ client, worker ]
+          enum: [client, worker]
           example: worker
         is_verified:
           type: boolean
@@ -125,7 +125,7 @@ components:
           example: John Doe
         role:
           type: string
-          enum: [ client, worker ]
+          enum: [client, worker]
           example: worker
         created_at:
           type: string
@@ -148,20 +148,21 @@ components:
           format: uuid
           example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
         bio:
-          type: [ string, "null" ]
+          type: [string, "null"]
           example: Tukang bersih-bersih profesional berpengalaman 5 tahun.
         location_district:
-          type: [ string, "null" ]
+          type: [string, "null"]
           example: Lowokwaru
         location_city:
-          type: [ string, "null" ]
+          type: [string, "null"]
           example: Kota Malang
         avatar_url:
-          type: [ string, "null" ]
+          type: [string, "null"]
           example: https://storage.serabutin.com/avatars/default.png
         phone:
-          type: [ string, "null" ]
-          description: Worker only. Null if the requester has no accepted bid with this
+          type: [string, "null"]
+          description:
+            Worker only. Null if the requester has no accepted bid with this
             worker.
           example: "081234567890"
         avg_rating:
@@ -176,6 +177,26 @@ components:
           type: integer
           description: Worker only. Always 0 for client.
           example: 35
+        category_ratings:
+          type: array
+          description: Worker only. Rating breakdown per category. Not present for client.
+          items:
+            type: object
+            properties:
+              category_id:
+                type: string
+                format: uuid
+                example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+              category_name:
+                type: string
+                example: Bebersih
+              avg_rating:
+                type: number
+                format: float
+                example: 4.8
+              review_count:
+                type: integer
+                example: 10
         created_at:
           type: string
           format: date-time
@@ -246,7 +267,7 @@ components:
           example: Kota Malang
         status:
           type: string
-          enum: [ open, in_progress, completed, cancelled ]
+          enum: [open, in_progress, completed, cancelled]
           example: open
         start_at:
           type: string
@@ -278,16 +299,12 @@ components:
           type: number
           format: float
           example: 90000
-        estimated_duration_hours:
-          type: integer
-          example: 3
         message:
-          type: [ string, "null" ]
-          example: Saya tertarik mengambil pekerjaan ini karena berpengalaman di bidang
-            kebersihan.
+          type: [string, "null"]
+          example: Mohon dikerjakan sore hari jika memungkinkan.
         status:
           type: string
-          enum: [ pending, accepted, rejected, withdrawn ]
+          enum: [pending, accepted, rejected, withdrawn]
           example: pending
         created_at:
           type: string
@@ -313,13 +330,16 @@ components:
           $ref: "#/components/schemas/PublicUserObject"
         reviewee:
           $ref: "#/components/schemas/PublicUserObject"
+        category:
+          $ref: "#/components/schemas/CategoryObject"
+          description: Category of the job being reviewed.
         rating:
           type: integer
           minimum: 1
           maximum: 5
           example: 4
         comment:
-          type: [ string, "null" ]
+          type: [string, "null"]
           example: Pekerja ramah dan hasil kerjanya memuaskan.
         created_at:
           type: string
@@ -335,21 +355,25 @@ components:
           example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
         type:
           type: string
-          enum: [ bid_accepted, bid_rejected ]
+          enum: [bid_accepted, bid_rejected]
           example: bid_accepted
         job_id:
           type: string
           format: uuid
+          description: Job identifier from the notification payload.
           example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
         job_title:
           type: string
+          description: Job title from the notification payload.
           example: Butuh tukang bebersih rumah
         bid_id:
           type: string
           format: uuid
+          description: Bid identifier from the notification payload.
           example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
         is_read:
           type: boolean
+          description: True when the notification has been read.
           example: false
         created_at:
           type: string
@@ -384,7 +408,8 @@ paths:
       tags:
         - Auth
       summary: Register a new user
-      description: Register a new user as client or worker. A verification email will
+      description:
+        Register a new user as client or worker. A verification email will
         be sent after successful registration.
       requestBody:
         required: true
@@ -411,7 +436,7 @@ paths:
                   example: John Doe
                 role:
                   type: string
-                  enum: [ client, worker ]
+                  enum: [client, worker]
                   example: worker
       responses:
         "201":
@@ -454,7 +479,8 @@ paths:
       tags:
         - Auth
       summary: Verify email address
-      description: Called by the frontend after the user clicks the verification link
+      description:
+        Called by the frontend after the user clicks the verification link
         in their email. The token is extracted from the URL query param and sent
         to this endpoint.
       parameters:
@@ -496,8 +522,9 @@ paths:
       tags:
         - Auth
       summary: Login
-      description: Authenticate a user. Access token is returned in the response body,
-        refresh token is set as an HttpOnly cookie.
+      description:
+        Authenticate a user. Access token is returned in the response body,
+        refresh token (opaque random string) is set as an HttpOnly cookie.
       requestBody:
         required: true
         content:
@@ -520,11 +547,14 @@ paths:
           description: Login successful
           headers:
             Set-Cookie:
-              description: HttpOnly cookie containing the refresh token
+              description:
+                HttpOnly cookie containing the refresh token. Secure and SameSite
+                values depend on environment configuration.
               schema:
                 type: string
-                example: refresh_token=abc123...; HttpOnly; Secure; SameSite=Strict;
-                  Path=/api/v1/auth/refresh; Max-Age=86400
+                example:
+                  refresh_token=abc123...; HttpOnly; Secure; SameSite=Lax;
+                  Path=/api/v1/auth; Max-Age=86400
           content:
             application/json:
               schema:
@@ -585,8 +615,10 @@ paths:
       tags:
         - Auth
       summary: Refresh access token
-      description: Rotate the refresh token and issue a new access token. The refresh
-        token is read automatically from the HttpOnly cookie.
+      description:
+        Rotate the refresh token and issue a new access token. The refresh
+        token (opaque random string) is read automatically from the HttpOnly
+        cookie.
       parameters:
         - in: cookie
           name: refresh_token
@@ -599,11 +631,14 @@ paths:
           description: Token refreshed successfully
           headers:
             Set-Cookie:
-              description: HttpOnly cookie containing the new refresh token
+              description:
+                HttpOnly cookie containing the new refresh token. Secure and
+                SameSite values depend on environment configuration.
               schema:
                 type: string
-                example: refresh_token=xyz789...; HttpOnly; Secure; SameSite=Strict;
-                  Path=/api/v1/auth/refresh; Max-Age=86400
+                example:
+                  refresh_token=xyz789...; HttpOnly; Secure; SameSite=Lax;
+                  Path=/api/v1/auth; Max-Age=86400
           content:
             application/json:
               schema:
@@ -644,7 +679,8 @@ paths:
       tags:
         - Auth
       summary: Logout
-      description: Invalidate the current refresh token and clear the HttpOnly cookie.
+      description:
+        Invalidate the current refresh token and clear the HttpOnly cookie.
         Requires a valid access token.
       security:
         - BearerAuth: []
@@ -660,11 +696,14 @@ paths:
           description: Logout successful
           headers:
             Set-Cookie:
-              description: Clears the refresh token cookie
+              description:
+                Clears the refresh token cookie. Secure and SameSite values depend
+                on environment configuration.
               schema:
                 type: string
-                example: refresh_token=; HttpOnly; Secure; SameSite=Strict;
-                  Path=/api/v1/auth/refresh; Max-Age=0
+                example:
+                  refresh_token=; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth;
+                  Max-Age=0
           content:
             application/json:
               schema:
@@ -694,7 +733,8 @@ paths:
       tags:
         - Users
       summary: Get authenticated user profile
-      description: Returns the profile of the currently authenticated user, including
+      description:
+        Returns the profile of the currently authenticated user, including
         their user_profiles data.
       security:
         - BearerAuth: []
@@ -719,6 +759,72 @@ paths:
                         $ref: "#/components/schemas/UserObject"
                       profile:
                         $ref: "#/components/schemas/UserProfileObject"
+              examples:
+                client_example:
+                  summary: Client profile (no category ratings)
+                  value:
+                    status: success
+                    message: Profil berhasil diambil.
+                    data:
+                      user:
+                        id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        email: client@example.com
+                        full_name: Jane Client
+                        role: client
+                        is_verified: true
+                        is_active: true
+                        created_at: "2025-04-25T10:00:00Z"
+                        updated_at: "2025-04-25T10:00:00Z"
+                      profile:
+                        id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        user_id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        bio: null
+                        location_district: Lowokwaru
+                        location_city: Kota Malang
+                        avatar_url: https://storage.serabutin.com/avatars/default.png
+                        phone: "081234567890"
+                        avg_rating: 4.5
+                        total_jobs_posted: 12
+                        total_jobs_completed: 0
+                        created_at: "2025-04-25T10:00:00Z"
+                        updated_at: "2025-04-25T10:00:00Z"
+                worker_example:
+                  summary: Worker profile (with category ratings)
+                  value:
+                    status: success
+                    message: Profil berhasil diambil.
+                    data:
+                      user:
+                        id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        email: worker@example.com
+                        full_name: John Worker
+                        role: worker
+                        is_verified: false
+                        is_active: true
+                        created_at: "2025-04-25T10:00:00Z"
+                        updated_at: "2025-04-25T10:00:00Z"
+                      profile:
+                        id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        user_id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        bio: Tukang bersih-bersih profesional berpengalaman 5 tahun.
+                        location_district: Lowokwaru
+                        location_city: Kota Malang
+                        avatar_url: https://storage.serabutin.com/avatars/worker.png
+                        phone: null
+                        avg_rating: 4.8
+                        total_jobs_posted: 0
+                        total_jobs_completed: 35
+                        category_ratings:
+                          - category_id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                            category_name: Bebersih
+                            avg_rating: 4.9
+                            review_count: 20
+                          - category_id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                            category_name: Servis AC
+                            avg_rating: 4.5
+                            review_count: 15
+                        created_at: "2025-04-25T10:00:00Z"
+                        updated_at: "2025-04-25T10:00:00Z"
         "401":
           description: Unauthenticated
           content:
@@ -735,8 +841,9 @@ paths:
       tags:
         - Users
       summary: Update authenticated user profile
-      description: Update profile of the currently authenticated user. All fields are
-        optional. Phone field is only applicable for workers.
+      description:
+        Update profile of the currently authenticated user. All fields are
+        optional. Phone field is only applicable for clients.
       security:
         - BearerAuth: []
       requestBody:
@@ -757,7 +864,7 @@ paths:
                   example: Lowokwaru
                 location_city:
                   type: string
-                  enum: [ Kota Malang, Kota Batu, Kabupaten Malang ]
+                  enum: [Kota Malang, Kota Batu, Kabupaten Malang]
                   example: Kota Malang
                 avatar_url:
                   type: string
@@ -842,7 +949,7 @@ paths:
           name: status
           schema:
             type: string
-            enum: [ open, in_progress, completed ]
+            enum: [open, in_progress, completed]
           description: Filter by job status.
           example: open
       responses:
@@ -915,7 +1022,7 @@ paths:
           name: status
           schema:
             type: string
-            enum: [ pending, accepted, rejected, withdrawn ]
+            enum: [pending, accepted, rejected, withdrawn]
           description: Filter by bid status.
           example: pending
       responses:
@@ -941,6 +1048,31 @@ paths:
                           $ref: "#/components/schemas/BidObject"
                         job:
                           $ref: "#/components/schemas/JobObject"
+                        client:
+                          type: [object, "null"]
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                            full_name:
+                              type: string
+                              example: Jane Client
+                            role:
+                              type: string
+                              enum: [client, worker]
+                              example: client
+                            created_at:
+                              type: string
+                              format: date-time
+                              example: 2025-04-25T10:00:00Z
+                            updated_at:
+                              type: string
+                              format: date-time
+                              example: 2025-04-25T10:00:00Z
+                            phone:
+                              type: [string, "null"]
+                              example: "081234567890"
                   meta:
                     $ref: "#/components/schemas/PaginatedMeta"
         "401":
@@ -964,15 +1096,150 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /users/me/assignments:
+    get:
+      tags:
+        - Users
+      summary: Get authenticated worker's assignments
+      description:
+        Returns a paginated list of jobs that the currently authenticated
+        worker has been assigned to. Supports filtering by category and status.
+        Accessible by workers only.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number.
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of items per page.
+          example: 10
+        - in: query
+          name: category_slug
+          schema:
+            type: string
+          description: Filter by category slug of the job.
+          example: bebersih
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [in_progress, completed]
+          description: Filter by job status.
+          example: completed
+      responses:
+        "200":
+          description: Assignments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Daftar assignment berhasil diambil.
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JobObject"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "403":
+          description: Forbidden. Accessible by workers only.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Akses ditolak.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/me/reviews:
+    get:
+      tags:
+        - Users
+      summary: Get authenticated user's received reviews
+      description: Returns a paginated list of reviews received by the currently
+        authenticated user.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number.
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of reviews per page.
+          example: 10
+      responses:
+        "200":
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Daftar review berhasil diambil.
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReviewObject"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /users/{id}:
     get:
       tags:
         - Users
       summary: Get user profile by ID
-      description: Returns the public profile of a user by their ID. Phone number is
+      description:
+        Returns the public profile of a user by their ID. Phone number is
         only visible if the requester has an accepted bid with this worker.
-      security:
-        - BearerAuth: []
       parameters:
         - in: path
           name: id
@@ -1003,15 +1270,298 @@ paths:
                         $ref: "#/components/schemas/PublicUserObject"
                       profile:
                         $ref: "#/components/schemas/UserProfileObject"
-        "401":
-          description: Unauthenticated
+              examples:
+                client_example:
+                  summary: Client profile (no category ratings)
+                  value:
+                    status: success
+                    message: Profil berhasil diambil.
+                    data:
+                      user:
+                        id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        full_name: Jane Client
+                        role: client
+                        created_at: "2025-04-25T10:00:00Z"
+                        updated_at: "2025-04-25T10:00:00Z"
+                      profile:
+                        id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        user_id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        bio: null
+                        location_district: Lowokwaru
+                        location_city: Kota Malang
+                        avatar_url: https://storage.serabutin.com/avatars/default.png
+                        phone: null
+                        avg_rating: 4.5
+                        total_jobs_posted: 12
+                        total_jobs_completed: 0
+                        created_at: "2025-04-25T10:00:00Z"
+                        updated_at: "2025-04-25T10:00:00Z"
+                worker_example:
+                  summary: Worker profile (with category ratings)
+                  value:
+                    status: success
+                    message: Profil berhasil diambil.
+                    data:
+                      user:
+                        id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        full_name: John Worker
+                        role: worker
+                        created_at: "2025-04-25T10:00:00Z"
+                        updated_at: "2025-04-25T10:00:00Z"
+                      profile:
+                        id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        user_id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        bio: Tukang bersih-bersih profesional berpengalaman 5 tahun.
+                        location_district: Lowokwaru
+                        location_city: Kota Malang
+                        avatar_url: https://storage.serabutin.com/avatars/worker.png
+                        phone: "081234567890"
+                        avg_rating: 4.8
+                        total_jobs_posted: 0
+                        total_jobs_completed: 35
+                        category_ratings:
+                          - category_id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                            category_name: Bebersih
+                            avg_rating: 4.9
+                            review_count: 20
+                          - category_id: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                            category_name: Servis AC
+                            avg_rating: 4.5
+                            review_count: 15
+                        created_at: "2025-04-25T10:00:00Z"
+                        updated_at: "2025-04-25T10:00:00Z"
+        "404":
+          description: User not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 status: error
-                message: Tidak terautentikasi.
+                message: Pengguna tidak ditemukan.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/{id}/jobs:
+    get:
+      tags:
+        - Users
+      summary: List public jobs posted by a user
+      description:
+        Returns a paginated list of jobs posted by a specific user. Only
+        accessible for client users. Can be filtered by status and category.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number.
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of jobs per page.
+          example: 10
+        - in: query
+          name: category_slug
+          schema:
+            type: string
+          description: Filter by category slug.
+          example: bebersih
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [open, in_progress, completed]
+          description: Filter by job status.
+          example: open
+      responses:
+        "200":
+          description: Jobs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Daftar pekerjaan berhasil diambil.
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JobObject"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+        "403":
+          description: Forbidden. User is not a client.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Pengguna ini bukan client.
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Pengguna tidak ditemukan.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/{id}/assignments:
+    get:
+      tags:
+        - Users
+      summary: List public assignments of a worker
+      description:
+        Returns a paginated list of jobs that a specific worker has been
+        assigned to. Only accessible for worker users. Supports filtering by
+        category and status.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number.
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of items per page.
+          example: 10
+        - in: query
+          name: category_slug
+          schema:
+            type: string
+          description: Filter by category slug of the job.
+          example: bebersih
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [in_progress, completed]
+          description: Filter by job status.
+          example: completed
+      responses:
+        "200":
+          description: Assignments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Daftar pekerjaan berhasil diambil.
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JobObject"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
+        "403":
+          description: Forbidden. User is not a worker.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Pengguna ini bukan worker.
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Pengguna tidak ditemukan.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/{id}/reviews:
+    get:
+      tags:
+        - Users
+      summary: List public reviews of a user
+      description: Returns a paginated list of reviews received by a specific user.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number.
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of reviews per page.
+          example: 10
+      responses:
+        "200":
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Daftar review berhasil diambil.
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReviewObject"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
         "404":
           description: User not found
           content:
@@ -1058,18 +1608,18 @@ paths:
       tags:
         - Jobs
       summary: List jobs feed
-      description: Returns a paginated list of open jobs using cursor-based
+      description:
+        Returns a paginated list of open jobs ordered by newest with id as a tie-breaker. Uses cursor-based
         pagination. Only jobs with status open are returned. Supports filtering
         by category, city, date posted range, and budget range.
-      security:
-        - BearerAuth: []
       parameters:
         - in: query
           name: cursor
           schema:
             type: string
-          description: Cursor for pagination. Leave empty for the first page.
-          example: eyJpZCI6IjAxOTMyYjJhIn0=
+          description: Cursor token from meta.next_cursor. Encodes created_at
+            and id for the current ordering. Leave empty for the first page.
+          example: eyJjcmVhdGVkX2F0IjoiMjAyNi0wNS0wOVQwODowMDowMFoiLCJpZCI6IjAxOTMyYjJhLTdjM2QtN2U0Zi04YTViLTZjN2Q4ZTlmMGExYiIsIl9wb2ludHNUb05leHRJdGVtcyI6dHJ1ZX0
         - in: query
           name: limit
           schema:
@@ -1087,7 +1637,7 @@ paths:
           name: city
           schema:
             type: string
-            enum: [ Kota Malang, Kota Batu, Kabupaten Malang ]
+            enum: [Kota Malang, Kota Batu, Kabupaten Malang]
           description: Filter by city.
           example: Kota Malang
         - in: query
@@ -1142,15 +1692,6 @@ paths:
                       $ref: "#/components/schemas/JobObject"
                   meta:
                     $ref: "#/components/schemas/CursorMeta"
-        "401":
-          description: Unauthenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status: error
-                message: Tidak terautentikasi.
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -1204,7 +1745,7 @@ paths:
                   example: Lowokwaru
                 location_city:
                   type: string
-                  enum: [ Kota Malang, Kota Batu, Kabupaten Malang ]
+                  enum: [Kota Malang, Kota Batu, Kabupaten Malang]
                   example: Kota Malang
                 start_at:
                   type: string
@@ -1265,8 +1806,6 @@ paths:
         - Jobs
       summary: Get job detail
       description: Returns the detail of a job by its ID.
-      security:
-        - BearerAuth: []
       parameters:
         - in: path
           name: id
@@ -1292,15 +1831,6 @@ paths:
                     example: Detail pekerjaan berhasil diambil.
                   data:
                     $ref: "#/components/schemas/JobObject"
-        "401":
-          description: Unauthenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status: error
-                message: Tidak terautentikasi.
         "404":
           description: Job not found
           content:
@@ -1317,7 +1847,8 @@ paths:
       tags:
         - Jobs
       summary: Update a job
-      description: Update a job. Only accessible by the client who posted the job,
+      description:
+        Update a job. Only accessible by the client who posted the job,
         only when the job status is still open, and only when any bids have not
         been accepted yet.
       security:
@@ -1363,7 +1894,7 @@ paths:
                   example: Lowokwaru
                 location_city:
                   type: string
-                  enum: [ Kota Malang, Kota Batu, Kabupaten Malang ]
+                  enum: [Kota Malang, Kota Batu, Kabupaten Malang]
                   example: Kota Malang
                 start_at:
                   type: string
@@ -1431,7 +1962,8 @@ paths:
       tags:
         - Jobs
       summary: Delete a job
-      description: Delete a job. Only accessible by the client who posted the job, and
+      description:
+        Delete a job. Only accessible by the client who posted the job, and
         only when the job status is still open.
       security:
         - BearerAuth: []
@@ -1488,12 +2020,87 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /jobs/{id}/workers:
+    get:
+      tags:
+        - Jobs
+      summary: Get assigned workers for a job
+      description:
+        Returns all workers assigned to a job. Accessible by the client who
+        posted the job or workers assigned to the job.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Job ID
+          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+      responses:
+        "200":
+          description: Workers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Daftar pekerja berhasil diambil.
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        assignment_id:
+                          type: string
+                          format: uuid
+                          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                        worker:
+                          $ref: "#/components/schemas/PublicUserObject"
+        "401":
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Tidak terautentikasi.
+        "403":
+          description: Forbidden. Requester is not the job owner or an assigned worker.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Akses ditolak.
+        "404":
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                status: error
+                message: Pekerjaan tidak ditemukan.
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /jobs/{id}/status:
     patch:
       tags:
         - Jobs
       summary: Update job status
-      description: Update job status to completed or cancelled. Only accessible by the
+      description:
+        Update job status to completed or cancelled. Only accessible by the
         client who posted the job, and only when the job status is in_progress.
       security:
         - BearerAuth: []
@@ -1517,7 +2124,7 @@ paths:
               properties:
                 status:
                   type: string
-                  enum: [ completed, cancelled ]
+                  enum: [completed, cancelled]
                   example: completed
       responses:
         "200":
@@ -1579,7 +2186,8 @@ paths:
       tags:
         - Bids
       summary: List bids for a job
-      description: Returns all bids for a specific job. Accessible by the client who
+      description:
+        Returns all bids for a specific job. Accessible by the client who
         posted the job only. Workers can check their own bid status via GET
         /users/me/bids.
       security:
@@ -1597,9 +2205,23 @@ paths:
           name: status
           schema:
             type: string
-            enum: [ pending, accepted, rejected, withdrawn ]
+            enum: [pending, accepted, rejected, withdrawn]
           description: Filter bids by status.
           example: pending
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number.
+          example: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Number of bids per page.
+          example: 10
       responses:
         "200":
           description: Bids retrieved successfully
@@ -1618,6 +2240,8 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/BidObject"
+                  meta:
+                    $ref: "#/components/schemas/PaginatedMeta"
         "401":
           description: Unauthenticated
           content:
@@ -1652,7 +2276,8 @@ paths:
       tags:
         - Bids
       summary: Place a bid on a job
-      description: Place a bid on a job. Accessible by workers only. A worker can only
+      description:
+        Place a bid on a job. Accessible by workers only. A worker can only
         bid once per job, and only when the job status is still open.
       security:
         - BearerAuth: []
@@ -1673,20 +2298,16 @@ paths:
               type: object
               required:
                 - proposed_price
-                - estimated_duration_hours
               properties:
                 proposed_price:
                   type: number
-                  minimum: 1
+                  minimum: 0
+                  description: Must be between the job's budget_min and budget_max.
                   example: 90000
-                estimated_duration_hours:
-                  type: integer
-                  minimum: 1
-                  example: 3
                 message:
-                  type: string
-                  example: Saya tertarik mengambil pekerjaan ini karena berpengalaman di bidang
-                    kebersihan.
+                  type: [string, "null"]
+                  description: Optional note from the worker for the client.
+                  example: Mohon dikerjakan sore hari jika memungkinkan.
       responses:
         "201":
           description: Bid placed successfully
@@ -1750,27 +2371,21 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /jobs/{id}/bids/{bid_id}/accept:
+  /bids/{id}/accept:
     patch:
       tags:
         - Bids
       summary: Accept a bid
-      description: Accept a bid on a job. Accessible by the client who posted the job
-        only. When the number of accepted bids reaches workers_needed, all
-        remaining pending bids are automatically rejected.
+      description:
+        Accept a bid. Accessible by the client who posted the job only. Only
+        pending bids can be accepted, and only while job slots are available.
+        When the acceptance fills the last worker slot, all remaining pending
+        bids for that job are automatically rejected by the backend.
       security:
         - BearerAuth: []
       parameters:
         - in: path
           name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Job ID
-          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
-        - in: path
-          name: bid_id
           required: true
           schema:
             type: string
@@ -1803,7 +2418,7 @@ paths:
                 status: error
                 message: Tidak terautentikasi.
         "403":
-          description: Forbidden. Not the job owner.
+          description: Forbidden. Not the job owner, job is not open, or bid is not pending.
           content:
             application/json:
               schema:
@@ -1812,33 +2427,34 @@ paths:
                 status: error
                 message: Akses ditolak.
         "404":
-          description: Job or bid not found
+          description: Bid or job not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 status: error
-                message: Pekerjaan atau bid tidak ditemukan.
+                message: Bid tidak ditemukan.
         "409":
-          description: Bid is no longer in pending status
+          description: Worker slots are full
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 status: error
-                message: Bid ini sudah tidak bisa diterima.
+                message: Kuota pekerja sudah penuh.
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /jobs/{id}/bids/{bid_id}/withdraw:
-    patch:
+  /bids/{id}:
+    delete:
       tags:
         - Bids
-      summary: Withdraw a bid
-      description: Withdraw a bid. Accessible by the worker who placed the bid only.
-        Only possible when the bid status is still pending.
+      summary: Cancel a bid
+      description:
+        Cancel a bid. Accessible by the worker who placed the bid only. Only
+        possible when the bid status is still pending.
       security:
         - BearerAuth: []
       parameters:
@@ -1848,19 +2464,11 @@ paths:
           schema:
             type: string
             format: uuid
-          description: Job ID
-          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
-        - in: path
-          name: bid_id
-          required: true
-          schema:
-            type: string
-            format: uuid
           description: Bid ID
           example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
       responses:
         "200":
-          description: Bid withdrawn successfully
+          description: Bid cancelled successfully
           content:
             application/json:
               schema:
@@ -1871,7 +2479,7 @@ paths:
                     example: success
                   message:
                     type: string
-                    example: Bid berhasil ditarik.
+                    example: Bid berhasil dibatalkan.
                   data:
                     $ref: "#/components/schemas/BidObject"
         "401":
@@ -1884,7 +2492,7 @@ paths:
                 status: error
                 message: Tidak terautentikasi.
         "403":
-          description: Forbidden. Not the bid owner.
+          description: Forbidden. Not the bid owner or bid is not pending.
           content:
             application/json:
               schema:
@@ -1893,103 +2501,14 @@ paths:
                 status: error
                 message: Akses ditolak.
         "404":
-          description: Job or bid not found
+          description: Bid not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 status: error
-                message: Pekerjaan atau bid tidak ditemukan.
-        "409":
-          description: Bid is no longer in pending status
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status: error
-                message: Bid ini sudah tidak bisa ditarik.
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-  # assignments module
-  /users/me/assignments:
-    get:
-      tags:
-        - Assignments
-      summary: Get authenticated worker's assignments
-      description: Returns a paginated list of jobs that the currently authenticated
-        worker has been assigned to. Supports filtering by category and status.
-        Accessible by workers only.
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: query
-          name: page
-          schema:
-            type: integer
-            default: 1
-          description: Page number.
-          example: 1
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 10
-          description: Number of items per page.
-          example: 10
-        - in: query
-          name: category_slug
-          schema:
-            type: string
-          description: Filter by category slug of the job.
-          example: bebersih
-        - in: query
-          name: status
-          schema:
-            type: string
-            enum: [ in_progress, completed ]
-          description: Filter by job status.
-          example: completed
-      responses:
-        "200":
-          description: Assignments retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  message:
-                    type: string
-                    example: Daftar assignment berhasil diambil.
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/JobObject"
-                  meta:
-                    $ref: "#/components/schemas/PaginatedMeta"
-        "401":
-          description: Unauthenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status: error
-                message: Tidak terautentikasi.
-        "403":
-          description: Forbidden. Accessible by workers only.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status: error
-                message: Akses ditolak.
+                message: Bid tidak ditemukan.
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -1999,9 +2518,10 @@ paths:
       tags:
         - Reviews
       summary: Submit a review
-      description: Submit a review after a job is completed. Both client and worker
+      description:
+        Submit a review after a job is completed. Both client and worker
         can submit a review, but only once per assignment. Only possible when
-        the job status is completed.
+        the job status is completed. Worker must use their own assignment_id.
       security:
         - BearerAuth: []
       parameters:
@@ -2026,7 +2546,8 @@ paths:
                 assignment_id:
                   type: string
                   format: uuid
-                  description: The assignment ID to review. Required to identify which worker is
+                  description:
+                    The assignment ID to review. Required to identify which worker is
                     being reviewed when workers_needed > 1.
                   example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
                 rating:
@@ -2036,6 +2557,7 @@ paths:
                   example: 4
                 comment:
                   type: string
+                  maxLength: 1000
                   example: Pekerja ramah dan hasil kerjanya memuaskan.
       responses:
         "201":
@@ -2072,9 +2594,10 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 status: error
-                message: Akses ditolak.
+                message: Pekerjaan belum selesai.
         "404":
-          description: Job or assignment not found, or assignment does not belong to this
+          description:
+            Job or assignment not found, or assignment does not belong to this
             job
           content:
             application/json:
@@ -2082,7 +2605,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 status: error
-                message: Pekerjaan atau assignment tidak ditemukan.
+                message: Assignment tidak ditemukan.
         "409":
           description: Review already submitted
           content:
@@ -2101,86 +2624,14 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /users/{id}/reviews:
-    get:
-      tags:
-        - Reviews
-      summary: List reviews received by a user
-      description: Returns a paginated list of reviews received by a specific user.
-        Used to display review history on a user's profile page.
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: User ID
-          example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
-        - in: query
-          name: page
-          schema:
-            type: integer
-            default: 1
-          description: Page number.
-          example: 1
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 10
-          description: Number of reviews per page.
-          example: 10
-      responses:
-        "200":
-          description: Reviews retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  message:
-                    type: string
-                    example: Daftar review berhasil diambil.
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/ReviewObject"
-                  meta:
-                    $ref: "#/components/schemas/PaginatedMeta"
-        "401":
-          description: Unauthenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status: error
-                message: Tidak terautentikasi.
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              example:
-                status: error
-                message: Pengguna tidak ditemukan.
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
   # upload module
   /uploads:
     post:
       tags:
         - Uploads
       summary: Upload a file
-      description: Upload a file to storage and return the URL. Currently only used
+      description:
+        Upload a file to storage and return the URL. Currently only used
         for avatar upload. Maximum file size is 2MB. Accepted formats are jpg,
         jpeg, and png.
       security:
@@ -2197,7 +2648,8 @@ paths:
                 file:
                   type: string
                   format: binary
-                  description: Image file to upload. Accepted formats are jpg, jpeg, and png.
+                  description:
+                    Image file to upload. Accepted formats are jpg, jpeg, and png.
                     Maximum size is 2MB.
       responses:
         "201":
@@ -2309,7 +2761,8 @@ paths:
                         properties:
                           unread_count:
                             type: integer
-                            description: Total number of unread notifications. Useful for notification
+                            description:
+                              Total number of unread notifications. Useful for notification
                               badge.
                             example: 5
         "401":
@@ -2338,7 +2791,8 @@ paths:
       tags:
         - Notifications
       summary: Mark a notification as read
-      description: Mark a single notification as read. Accessible by the owner of the
+      description:
+        Mark a single notification as read. Accessible by the owner of the
         notification only.
       security:
         - BearerAuth: []
