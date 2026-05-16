@@ -1044,6 +1044,31 @@ paths:
                           $ref: "#/components/schemas/BidObject"
                         job:
                           $ref: "#/components/schemas/JobObject"
+                        client:
+                          type: [object, "null"]
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              example: 01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b
+                            full_name:
+                              type: string
+                              example: Jane Client
+                            role:
+                              type: string
+                              enum: [client, worker]
+                              example: client
+                            created_at:
+                              type: string
+                              format: date-time
+                              example: 2025-04-25T10:00:00Z
+                            updated_at:
+                              type: string
+                              format: date-time
+                              example: 2025-04-25T10:00:00Z
+                            phone:
+                              type: [string, "null"]
+                              example: "081234567890"
                   meta:
                     $ref: "#/components/schemas/PaginatedMeta"
         "401":
