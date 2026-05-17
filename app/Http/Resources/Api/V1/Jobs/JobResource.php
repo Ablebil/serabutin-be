@@ -15,6 +15,10 @@ class JobResource extends JsonResource
             'id' => $this->id,
             'client' => $this->whenLoaded('client', fn() => new PublicUserResource($this->client)),
             'category' => $this->whenLoaded('category', fn() => new CategoryResource($this->category)),
+            'assignments' => $this->whenLoaded(
+                'assignments',
+                fn() => JobAssignmentSummaryResource::collection($this->assignments)
+            ),
             'title' => $this->title,
             'description' => $this->description,
             'budget_min' => $this->budget_min,
